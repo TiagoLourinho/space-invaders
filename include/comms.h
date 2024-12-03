@@ -5,7 +5,7 @@
 
 #include "game_def.h"
 
-enum MESSAGE_TYPE { CONNECT, ACTION, DISCONNECT, ALIENS_UPDATE };
+typedef enum { CONNECT, ACTION, DISCONNECT, ALIENS_UPDATE } MESSAGE_TYPE;
 
 /*
     "Connect" Interaction

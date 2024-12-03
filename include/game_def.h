@@ -6,9 +6,9 @@
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 
-enum MOVEMENT_ORIENTATION { VERTICAL, HORIZONTAL };
-enum MOVEMENT_DIRECTION { UP, RIGHT, DOWN, LEFT };
-enum ACTION_TYPE { MOVE, ZAP };
+typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
+typedef enum { UP, RIGHT, DOWN, LEFT } MOVEMENT_DIRECTION;
+typedef enum { MOVE, ZAP } ACTION_TYPE;
 
 typedef struct {
   int row;
