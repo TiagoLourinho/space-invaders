@@ -5,6 +5,7 @@
 
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
+#define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
 
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
 typedef enum { UP, RIGHT, DOWN, LEFT } MOVEMENT_DIRECTION;
@@ -43,7 +44,7 @@ typedef struct {
   player_t players[MAX_PLAYERS];
   /* Game ends when it reaches 0 */
   int aliens_alive;
-  alien_t aliens[(SPACE_SIZE * SPACE_SIZE) / 3];
+  alien_t aliens[N_ALIENS];
 } game_t;
 
 #endif // GAME_DEF_H

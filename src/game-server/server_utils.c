@@ -80,7 +80,7 @@ void init_game(game_t *game) {
   }
 
   /* Init aliens */
-  game->aliens_alive = (SPACE_SIZE * SPACE_SIZE) / 3;
+  game->aliens_alive = N_ALIENS;
 
   for (int i = 0; i < game->aliens_alive; i++) {
     alien_t *alien = &game->aliens[i];
