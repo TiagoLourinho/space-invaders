@@ -58,8 +58,8 @@ void nc_move_player(WINDOW *win, player_t player, position_t old_pos) {
   waddch(win, id_to_symbol(player.id) | A_BOLD);
 }
 
-/* Removes a player from the screen */
-void nc_remove_player(WINDOW *win, player_t player) {
-  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+/* Cleans a position from the screen */
+void nc_clean_position(WINDOW *win, position_t position) {
+  wmove(win, POS_TO_WIN(position.row), POS_TO_WIN(position.col));
   waddch(win, ' ' | A_BOLD);
 }

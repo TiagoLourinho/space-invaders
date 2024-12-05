@@ -147,3 +147,46 @@ void update_player_position(player_t *player, MOVEMENT_DIRECTION direction) {
     break;
   }
 }
+
+/* Updates the screen and state when a player zaps */
+void player_zap(WINDOW *win, game_t *game, int player_id) {
+  int aliens_killed = 0;
+  alien_t *alien;
+  player_t *player = &game->players[player_id];
+  player_t *other_player;
+  uint64_t current_ts = get_timestamp_ms();
+
+  /* Check aliens that were killed */
+  for (int i = 0; i < N_ALIENS; i++) {
+    alien = &game->aliens[i];
+
+    /* Alien dies if it is alive and aligned with the player zap */
+    if (alien->alive && ((player->orientation == VERTICAL &&
+                          alien->position.row == player->position.row) ||
+                         (player->orientation == HORIZONTAL &&
+                          alien->position.col == player->position.col))) {
+      aliens_killed++;
+      game->aliens_alive--;
+      alien->alive = false;
+      nc_clean_position(win, alien->position);
+    }
+  }
+
+  player->last_shot = current_ts;
+  player->score += aliens_killed;
+
+  /* Check if it stunned other players */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    /* Skip current player */
+    if (i == player_id)
+      continue;
+
+    other_player = &game->players[i];
+
+    if ((player->orientation == HORIZONTAL &&
+         player->position.col == other_player->position.col) ||
+        (player->orientation == VERTICAL &&
+         player->position.row == other_player->position.row))
+      other_player->last_stunned = current_ts;
+  }
+}

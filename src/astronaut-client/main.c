@@ -118,7 +118,6 @@ int main() {
       action_response =
           (action_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
-      assert(action_response->status_code == 200);
       free(action_response);
 
       send_action_message = false;

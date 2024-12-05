@@ -26,6 +26,6 @@ void nc_add_player(WINDOW *win, player_t player);
 
 void nc_move_player(WINDOW *win, player_t player, position_t old_pos);
 
-void nc_remove_player(WINDOW *win, player_t player);
+void nc_clean_position(WINDOW *win, position_t position);
 
 #endif // NCURSES_WRAPPER_H

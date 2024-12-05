@@ -83,6 +83,8 @@ int main() {
                                  action_request->movement_direction);
 
           nc_move_player(game_window, *current_player, old_position);
+        } else if (action_request->action_type == ZAP) {
+          player_zap(game_window, &game, action_request->id);
         }
       }
 
@@ -99,7 +101,7 @@ int main() {
       /* Remove player from screen and state */
       if (status_code == 200) {
         current_player = &game.players[disconnect_request->id];
-        nc_remove_player(game_window, *current_player);
+        nc_clean_position(game_window, current_player->position);
         current_player->connected = false;
       }
 
