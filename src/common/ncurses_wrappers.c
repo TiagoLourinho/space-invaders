@@ -1,17 +1,23 @@
 #include "ncurses_wrapper.h"
 
-/* Initializes ncurses and draws game rectangle */
-WINDOW *nc_init() {
+/* Initializes ncurses */
+void nc_init() {
   initscr();
   cbreak();
   keypad(stdscr, TRUE);
   noecho();
+}
+
+/* Draws game rectangle */
+WINDOW *nc_draw_space() {
 
   /*
     Creates a window and draws a border
     Adding +2 on each dimension for the border
   */
   WINDOW *win = newwin(SPACE_SIZE + 2, SPACE_SIZE + 2, 0, 0);
+  assert(win != NULL);
+
   box(win, 0, 0);
   wrefresh(win);
 

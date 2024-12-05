@@ -70,7 +70,7 @@ void init_game(game_t *game) {
   for (int i = 0; i < MAX_PLAYERS; i++) {
     player_t *player = &game->players[i];
 
-    player->connected = -1;
+    player->connected = false;
     player->id = i;
     player->last_shot = -1;
     player->last_stunned = -1;
@@ -85,7 +85,7 @@ void init_game(game_t *game) {
   for (int i = 0; i < game->aliens_alive; i++) {
     alien_t *alien = &game->aliens[i];
 
-    alien->alive = 1;
+    alien->alive = true;
     place_alien(alien);
   }
 }

@@ -3,12 +3,14 @@
 #ifndef GAME_DEF_H
 #define GAME_DEF_H
 
+#include <stdbool.h>
+
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 #define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
 
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
-typedef enum { UP, RIGHT, DOWN, LEFT } MOVEMENT_DIRECTION;
+typedef enum { UP, RIGHT, DOWN, LEFT, NO_MOVEMENT } MOVEMENT_DIRECTION;
 typedef enum { MOVE, ZAP } ACTION_TYPE;
 
 typedef struct {
@@ -20,9 +22,8 @@ typedef struct {
   /* The id of the player (that corresponds to its  position on the players
    * array)*/
   int id;
-  /* Defines whether the player is connected/playing (1) or if the position is
-   * free (0) */
-  int connected;
+  /* Defines if the player is connected/playing or if the position is free */
+  bool connected;
   MOVEMENT_ORIENTATION orientation;
   position_t position;
   /* The current score (-1 if not connected) */
@@ -36,7 +37,7 @@ typedef struct {
 } player_t;
 
 typedef struct {
-  int alive;
+  bool alive;
   position_t position;
 } alien_t;
 

@@ -14,7 +14,7 @@ OUTER_SPACE_DISPLAY_SRCS = $(wildcard src/outer-space-display/*.c)
 
 #################### Targets ####################
 
-all: teste directories game-server #astronaut-client outer-space-display
+all: teste directories game-server astronaut-client # outer-space-display
 
 
 teste:

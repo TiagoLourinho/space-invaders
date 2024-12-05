@@ -5,7 +5,23 @@
 
 #include "game_def.h"
 
-typedef enum { CONNECT, ACTION, DISCONNECT, ALIENS_UPDATE } MESSAGE_TYPE;
+#define SERVER_ADDRESS "tcp://127.0.0.1:5555"
+
+/*
+  Every message has 2 parts:
+    - the type/header
+    - the message contents
+*/
+typedef enum {
+  CONNECT_REQUEST, /* Only sends the header as no extra info is needed */
+  CONNECT_RESPONSE,
+  ACTION_REQUEST,
+  ACTION_RESPONSE,
+  DISCONNECT_REQUEST,
+  DISCONNECT_RESPONSE,
+  ALIENS_UPDATE_REQUEST,
+  ALIENS_UPDATE_RESPONSE,
+} MESSAGE_TYPE;
 
 /*
     "Connect" Interaction
