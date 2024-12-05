@@ -6,6 +6,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <utils.h>
 
 /* Converts a game position to a position on the window (considering the
  * border)*/
@@ -18,5 +19,13 @@ WINDOW *nc_draw_space();
 void nc_draw_starting_aliens(WINDOW *game_window, game_t game);
 
 void nc_cleanup();
+
+void nc_update_screen(WINDOW *win);
+
+void nc_add_player(WINDOW *win, player_t player);
+
+void nc_move_player(WINDOW *win, player_t player, position_t old_pos);
+
+void nc_remove_player(WINDOW *win, player_t player);
 
 #endif // NCURSES_WRAPPER_H

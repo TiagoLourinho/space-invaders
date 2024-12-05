@@ -60,8 +60,6 @@ typedef struct {
 typedef struct {
   /* 200 if Ok, 400 otherwise */
   int status_code;
-  /* The score per player currently playing (-1 if not playing) */
-  int scores[MAX_PLAYERS];
 } action_response_t;
 
 /*

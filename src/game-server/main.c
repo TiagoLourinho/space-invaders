@@ -2,6 +2,7 @@
 #include "game_def.h"
 #include "ncurses_wrapper.h"
 #include "server_utils.h"
+#include "validators.h"
 #include "zeromq_wrapper.h"
 #include <ncurses.h>
 #include <stdlib.h>
@@ -10,6 +11,9 @@
 
 int main() {
   game_t game;
+  player_t *current_player;
+  position_t old_position;
+  int n, status_code;
   /* Ncurses related */
   WINDOW *game_window;
   /* ZMQ and messages related */
@@ -42,24 +46,77 @@ int main() {
 
     switch (msg_type) {
     case CONNECT_REQUEST:
+      n = find_position_and_init_player(&game);
+
+      if (n != -1) {
+        /* Return player info */
+        connect_response.status_code = 200;
+        connect_response.id = n;
+        connect_response.token = game.players[n].token;
+        connect_response.orientation = game.players[n].orientation;
+
+        nc_add_player(game_window, game.players[n]);
+      } else {
+        connect_response.status_code = 400;
+      }
+
       zmq_send_msg(rep_socket, CONNECT_RESPONSE, &connect_response);
       break;
+
     case ACTION_REQUEST:
       action_request = (action_request_t *)temp_pointer;
+
+      status_code = validate_action_request(*action_request, game);
+
+      action_response.status_code = status_code;
+
+      /* Move the player or shoot and update state */
+      if (status_code == 200) {
+        current_player = &game.players[action_request->id];
+
+        if (action_request->action_type == MOVE) {
+          /* Store old pos */
+          old_position.col = current_player->position.col;
+          old_position.row = current_player->position.row;
+
+          update_player_position(current_player,
+                                 action_request->movement_direction);
+
+          nc_move_player(game_window, *current_player, old_position);
+        }
+      }
+
       zmq_send_msg(rep_socket, ACTION_RESPONSE, &action_response);
       break;
+
     case DISCONNECT_REQUEST:
       disconnect_request = (disconnect_request_t *)temp_pointer;
+
+      status_code = validate_disconnect_request(*disconnect_request, game);
+
+      disconnect_response.status_code = status_code;
+
+      /* Remove player from screen and state */
+      if (status_code == 200) {
+        current_player = &game.players[disconnect_request->id];
+        nc_remove_player(game_window, *current_player);
+        current_player->connected = false;
+      }
+
       zmq_send_msg(rep_socket, DISCONNECT_RESPONSE, &disconnect_response);
       break;
+
     case ALIENS_UPDATE_REQUEST:
       break;
+
     default:
       continue;
     }
 
     if (temp_pointer != NULL)
       free(temp_pointer);
+
+    nc_update_screen(game_window);
   }
 
   nc_cleanup();

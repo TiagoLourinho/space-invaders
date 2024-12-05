@@ -4,10 +4,15 @@
 #define GAME_DEF_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 #define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
+#define ZAP_TIME_ON_SCREEN 500 // ms
+#define ZAP_DELAY 3000         // ms
+#define STUNNED_DELAY 10000    // ms
+#define ALIEN_UPDATE 1000      // ms
 
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
 typedef enum { UP, RIGHT, DOWN, LEFT, NO_MOVEMENT } MOVEMENT_DIRECTION;
@@ -28,10 +33,12 @@ typedef struct {
   position_t position;
   /* The current score (-1 if not connected) */
   int score;
-  /* Contains the timestamp where the player was last stunned (starts at -1) */
-  int last_stunned;
-  /* Contains the timestamp where the player last shot (starts at -1) */
-  int last_shot;
+  /* Contains the timestamp (ms since epoch) where the player was last stunned
+   * (starts at 0) */
+  uint64_t last_stunned;
+  /* Contains the timestamp (ms since epoch) where the player last shot (starts
+   * at 0) */
+  uint64_t last_shot;
   /* The authentication token assigned to the player */
   int token;
 } player_t;

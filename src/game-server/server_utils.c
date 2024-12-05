@@ -14,7 +14,7 @@ void place_player(player_t *player) {
   //        6
   //        2
 
-  player->orientation = id % 2 ? HORIZONTAL : VERTICAL;
+  player->orientation = id % 2 == 0 ? HORIZONTAL : VERTICAL;
 
   switch (id) {
   case 0:
@@ -72,8 +72,8 @@ void init_game(game_t *game) {
 
     player->connected = false;
     player->id = i;
-    player->last_shot = -1;
-    player->last_stunned = -1;
+    player->last_shot = 0;
+    player->last_stunned = 0;
     place_player(player);
     player->score = -1;
     player->token = -1;
@@ -87,5 +87,63 @@ void init_game(game_t *game) {
 
     alien->alive = true;
     place_alien(alien);
+  }
+}
+
+/* Finds an available position for a player and initializes it */
+int find_position_and_init_player(game_t *game) {
+
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    player_t *player = &game->players[i];
+
+    if (!player->connected) {
+      player->connected = true;
+      player->last_shot = 0;
+      player->last_stunned = 0;
+      place_player(player);
+      player->score = 0;
+      player->token = rand();
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/* Update the position of a player */
+void update_player_position(player_t *player, MOVEMENT_DIRECTION direction) {
+
+  switch (direction) {
+  case UP:
+    player->position.row--;
+
+    /* Revert if out of bounds */
+    if (player->position.row < 2)
+      player->position.row++;
+    break;
+  case DOWN:
+    player->position.row++;
+
+    /* Revert if out of bounds */
+    if (player->position.row >= SPACE_SIZE - 2)
+      player->position.row--;
+    break;
+  case RIGHT:
+    player->position.col++;
+
+    /* Revert if out of bounds */
+    if (player->position.col >= SPACE_SIZE - 2)
+      player->position.col--;
+    break;
+  case LEFT:
+    player->position.col--;
+
+    /* Revert if out of bounds */
+    if (player->position.col < 2)
+      player->position.col++;
+    break;
+
+  default:
+    break;
   }
 }

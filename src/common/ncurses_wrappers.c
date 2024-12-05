@@ -39,3 +39,27 @@ void nc_draw_starting_aliens(WINDOW *game_window, game_t game) {
 
 /* Stops and cleanup ncurses */
 void nc_cleanup() { endwin(); }
+
+/* Updates the screen */
+void nc_update_screen(WINDOW *win) { wrefresh(win); }
+
+/* Adds a player to the screen */
+void nc_add_player(WINDOW *win, player_t player) {
+  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+  waddch(win, id_to_symbol(player.id) | A_BOLD);
+}
+
+/* Move a player on the screen */
+void nc_move_player(WINDOW *win, player_t player, position_t old_pos) {
+  wmove(win, POS_TO_WIN(old_pos.row), POS_TO_WIN(old_pos.col));
+  waddch(win, ' ' | A_BOLD);
+
+  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+  waddch(win, id_to_symbol(player.id) | A_BOLD);
+}
+
+/* Removes a player from the screen */
+void nc_remove_player(WINDOW *win, player_t player) {
+  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+  waddch(win, ' ' | A_BOLD);
+}
