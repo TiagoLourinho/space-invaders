@@ -37,7 +37,7 @@ int main() {
       (connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
   if (connect_response->status_code != 200) {
-    printf("Game is full (%d players currently playing).\n", MAX_PLAYERS);
+    printw("Game is full (%d players currently playing).\n", MAX_PLAYERS);
     exit(-1);
   } else {
     player_id = connect_response->id;
@@ -51,6 +51,19 @@ int main() {
   action_request.token = player_token;
   disconnect_request.id = player_id;
   disconnect_request.token = player_token;
+
+  /* Print instructions */
+  printw("You are playing as player: %c\n\n", id_to_symbol(player_id));
+  printw("Controls:\n");
+  if (player_orientation == VERTICAL) {
+    printw("\t UP ARROW\t-> Move up\n");
+    printw("\t DOWN ARROW\t-> Move down\n");
+  } else {
+    printw("\t RIGHT ARROW\t-> Move right\n");
+    printw("\t LEFT ARROW\t-> Move left\n");
+  }
+  printw("\t SPACEBAR\t-> Zap\n");
+  printw("\t q/Q\t\t-> Stop playing\n");
 
   /* Game loop */
   while (!stop_playing) {

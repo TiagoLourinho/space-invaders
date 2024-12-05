@@ -15,7 +15,7 @@ int main() {
   position_t old_position;
   int n, status_code;
   /* Ncurses related */
-  WINDOW *game_window;
+  WINDOW *game_window, *score_window;
   /* ZMQ and messages related */
   void *zmq_context = zmq_get_context();
   void *rep_socket = zmq_create_socket(zmq_context, ZMQ_REP);
@@ -31,6 +31,7 @@ int main() {
 
   nc_init();
   game_window = nc_draw_space();
+  score_window = nc_init_scoreboard();
 
   zmq_bind_socket(rep_socket, SERVER_ADDRESS);
 
@@ -118,7 +119,10 @@ int main() {
     if (temp_pointer != NULL)
       free(temp_pointer);
 
+    nc_update_scoreboard(score_window, game.players);
+
     nc_update_screen(game_window);
+    nc_update_screen(score_window);
   }
 
   nc_cleanup();

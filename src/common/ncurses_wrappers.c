@@ -24,6 +24,71 @@ WINDOW *nc_draw_space() {
   return win;
 }
 
+/* Draws score rectangle */
+WINDOW *nc_init_scoreboard() {
+
+  WINDOW *win = newwin(MAX_PLAYERS + 4, 16, 0, SPACE_SIZE + 5);
+  assert(win != NULL);
+
+  box(win, 0, 0);
+
+  wmove(win, 1, 1);
+  wprintw(win, "  SCOREBOARD  ");
+  wmove(win, 2, 1);
+  wprintw(win, "--------------");
+
+  wrefresh(win);
+
+  return win;
+}
+
+/* Helper function to sort players based on score */
+int __compare_players(const void *a, const void *b) {
+  player_t *playerA = (player_t *)a;
+  player_t *playerB = (player_t *)b;
+
+  int score_A = playerA->score;
+  int score_B = playerB->score;
+
+  /* Scores are only reset when a player connects, so this is to make non
+   * connected players go to the end of the scoreboard so it gets cleaned */
+  if (!playerA->connected)
+    score_A = -1;
+  if (!playerB->connected)
+    score_B = -1;
+
+  return score_B - score_A;
+}
+
+/* Resets and updates the scoreboard */
+void nc_update_scoreboard(WINDOW *win, player_t *players) {
+
+  player_t copy_players[MAX_PLAYERS];
+
+  // Create copy to be sorted
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    /* Only these attributes will be important */
+    copy_players[i].id = players[i].id;
+    copy_players[i].connected = players[i].connected;
+    copy_players[i].score = players[i].score;
+  }
+
+  // Sort scores
+  qsort(&copy_players, MAX_PLAYERS, sizeof(player_t), __compare_players);
+
+  // Print scoreboard
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    wmove(win, 3 + i, 1);
+    wprintw(win, "              ");
+
+    if (copy_players[i].connected) {
+      wmove(win, 3 + i, 1);
+      wprintw(win, "Player %c - %3d", id_to_symbol(copy_players[i].id),
+              copy_players[i].score);
+    }
+  }
+}
+
 /* Draws the starting aliens on screen */
 void nc_draw_starting_aliens(WINDOW *game_window, game_t game) {
 
