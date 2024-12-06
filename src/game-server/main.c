@@ -170,6 +170,22 @@ int main() {
     nc_update_screen(score_window);
   }
 
+  /* Clean screen and print winning player */
+  n = -1; // Temp variable to hold the winning player ID
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    current_player = &game.players[i];
+
+    if (current_player->connected &&
+        (n == -1 || current_player->score >= game.players[n].score))
+      n = i;
+  }
+  erase(); /* Clean entire ncurses screen */
+  if (n != -1)
+    printw("Player %c won with %d points!\n", id_to_symbol(n),
+           game.players[n].score);
+  refresh(); /* Refresh entire ncurses screen */
+  sleep(5);
+
   nc_cleanup();
   zmq_cleanup(zmq_context, rep_socket, NULL);
 }
