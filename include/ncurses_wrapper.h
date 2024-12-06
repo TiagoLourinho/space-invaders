@@ -28,6 +28,8 @@ void nc_update_screen(WINDOW *win);
 
 void nc_add_player(WINDOW *win, player_t player);
 
+void nc_add_alien(WINDOW *game_window, position_t *position);
+
 void nc_move_player(WINDOW *win, player_t player, position_t old_pos);
 
 void nc_clean_position(WINDOW *win, position_t position);

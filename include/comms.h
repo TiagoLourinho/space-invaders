@@ -16,19 +16,13 @@ typedef enum {
   CONNECT_REQUEST, /* Only sends the header as no extra info is needed */
   CONNECT_RESPONSE,
   ACTION_REQUEST,
-  ACTION_RESPONSE,
+  ACTION_RESPONSE, /* Only status code */
   DISCONNECT_REQUEST,
-  DISCONNECT_RESPONSE,
+  DISCONNECT_RESPONSE, /* Only status code */
   ALIENS_UPDATE_REQUEST,
-  ALIENS_UPDATE_RESPONSE,
+  ALIENS_UPDATE_RESPONSE, /* Only status code */
 } MESSAGE_TYPE;
 
-/*
-    "Connect" Interaction
-
-    -> Player sends request to connect (without any extra information)
-    -> Server responds with the needed information
-*/
 typedef struct {
   /* 200 if Ok, 400 otherwise */
   int status_code;
@@ -40,12 +34,6 @@ typedef struct {
   int token;
 } connect_response_t;
 
-/*
-    "Action" Interaction
-
-    -> Player sends request to perform an action (movement or zap)
-    -> Server responds with the status code and game scores
-*/
 typedef struct {
   /* The id assigned to the player (corresponds to the position on the players
    * array) */
@@ -58,17 +46,6 @@ typedef struct {
 } action_request_t;
 
 typedef struct {
-  /* 200 if Ok, 400 otherwise */
-  int status_code;
-} action_response_t;
-
-/*
-    "Disconnect" Interaction
-
-    -> Player sends request to disconnect
-    -> Server responds with the status code
-*/
-typedef struct {
   /* The id assigned to the player */
   int id;
   /* The token assigned to the player for authentication */
@@ -76,8 +53,12 @@ typedef struct {
 } disconnect_request_t;
 
 typedef struct {
+  alien_t aliens[N_ALIENS];
+} aliens_update_request_t;
+
+typedef struct {
   /* 200 if Ok, 400 otherwise */
   int status_code;
-} disconnect_response_t;
+} only_status_code_response_t;
 
 #endif // COMMS_H

@@ -11,15 +11,15 @@ size_t get_msg_size(MESSAGE_TYPE type) {
   case ACTION_REQUEST:
     return sizeof(action_request_t);
   case ACTION_RESPONSE:
-    return sizeof(action_response_t);
+    return sizeof(only_status_code_response_t);
   case DISCONNECT_REQUEST:
     return sizeof(disconnect_request_t);
   case DISCONNECT_RESPONSE:
-    return sizeof(disconnect_response_t);
+    return sizeof(only_status_code_response_t);
   case ALIENS_UPDATE_REQUEST:
-    exit(-1); /* TODO: Add update aliens */
+    return sizeof(aliens_update_request_t);
   case ALIENS_UPDATE_RESPONSE:
-    exit(-1); /* TODO: Add update aliens */
+    return sizeof(only_status_code_response_t);
   default:
     exit(-1);
   }

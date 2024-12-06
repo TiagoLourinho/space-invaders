@@ -18,9 +18,8 @@ int main() {
   /* Structs to receive and send the requests */
   connect_response_t *connect_response;
   action_request_t action_request;
-  action_response_t *action_response;
+  only_status_code_response_t *status_code_response;
   disconnect_request_t disconnect_request;
-  disconnect_response_t *disconnect_response;
 
   /* Player info (received when connected)*/
   int player_id;
@@ -111,10 +110,10 @@ int main() {
       stop_playing = true;
       msg_type = DISCONNECT_REQUEST;
       zmq_send_msg(req_socket, msg_type, &disconnect_request);
-      disconnect_response =
-          (disconnect_response_t *)zmq_receive_msg(req_socket, &msg_type);
-      assert(disconnect_response->status_code == 200);
-      free(disconnect_response);
+      status_code_response =
+          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
+      assert(status_code_response->status_code == 200);
+      free(status_code_response);
       break;
 
     default:
@@ -128,10 +127,10 @@ int main() {
       msg_type = ACTION_REQUEST;
       zmq_send_msg(req_socket, msg_type, &action_request);
 
-      action_response =
-          (action_response_t *)zmq_receive_msg(req_socket, &msg_type);
+      status_code_response =
+          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
-      free(action_response);
+      free(status_code_response);
 
       send_action_message = false;
     }

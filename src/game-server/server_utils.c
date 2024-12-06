@@ -110,37 +110,37 @@ int find_position_and_init_player(game_t *game) {
   return -1;
 }
 
-/* Update the position of a player */
-void update_player_position(player_t *player, MOVEMENT_DIRECTION direction) {
+/* Update the position of a player or alien */
+void update_position(position_t *position, MOVEMENT_DIRECTION direction) {
 
   switch (direction) {
   case UP:
-    player->position.row--;
+    position->row--;
 
     /* Revert if out of bounds */
-    if (player->position.row < 2)
-      player->position.row++;
+    if (position->row < 2)
+      position->row++;
     break;
   case DOWN:
-    player->position.row++;
+    position->row++;
 
     /* Revert if out of bounds */
-    if (player->position.row >= SPACE_SIZE - 2)
-      player->position.row--;
+    if (position->row >= SPACE_SIZE - 2)
+      position->row--;
     break;
   case RIGHT:
-    player->position.col++;
+    position->col++;
 
     /* Revert if out of bounds */
-    if (player->position.col >= SPACE_SIZE - 2)
-      player->position.col--;
+    if (position->col >= SPACE_SIZE - 2)
+      position->col--;
     break;
   case LEFT:
-    player->position.col--;
+    position->col--;
 
     /* Revert if out of bounds */
-    if (player->position.col < 2)
-      player->position.col++;
+    if (position->col < 2)
+      position->col++;
     break;
 
   default:
@@ -188,5 +188,55 @@ void player_zap(WINDOW *win, game_t *game, int player_id) {
         (player->orientation == VERTICAL &&
          player->position.row == other_player->position.row))
       other_player->last_stunned = current_ts;
+  }
+}
+
+/* Spawns the process responsible for updating the aliens */
+void spawn_alien_update_fork(alien_t *aliens) {
+
+  int n = fork();
+  assert(n != -1);
+
+  /* Only the child process goes in */
+  if (n == 0) {
+    void *zmq_context = zmq_get_context();
+    void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
+    MESSAGE_TYPE msg_type;
+    int status_code;
+    aliens_update_request_t aliens_update_request;
+    only_status_code_response_t *status_code_response;
+
+    zmq_connect_socket(req_socket, SERVER_ADDRESS);
+
+    /* Initial copy of the aliens to the request struct */
+    for (int i = 0; i < N_ALIENS; i++) {
+      aliens_update_request.aliens[i].alive = aliens[i].alive;
+      aliens_update_request.aliens[i].position.col = aliens[i].position.col;
+      aliens_update_request.aliens[i].position.row = aliens[i].position.row;
+    }
+
+    while (1) {
+      sleep(ALIEN_UPDATE);
+
+      /* Generate new positions for aliens */
+      for (int i = 0; i < N_ALIENS; i++) {
+        update_position(&aliens_update_request.aliens[i].position,
+                        (MOVEMENT_DIRECTION)(rand() % 4));
+      }
+
+      zmq_send_msg(req_socket, ALIENS_UPDATE_REQUEST, &aliens_update_request);
+
+      status_code_response =
+          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
+
+      status_code = status_code_response->status_code;
+      free(status_code_response);
+
+      if (status_code == 400) {
+        /* The main process will send a 400 code when this child process should
+         * stop generating positions */
+        exit(0);
+      }
+    }
   }
 }

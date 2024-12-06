@@ -12,8 +12,11 @@
 int main() {
   game_t game;
   player_t *current_player;
+  alien_t *alien;
   position_t old_position;
   int n, status_code;
+  /* Controls if the other process has been terminated */
+  bool joined_alien_process = false;
   /* Ncurses related */
   WINDOW *game_window, *score_window;
   /* ZMQ and messages related */
@@ -25,9 +28,9 @@ int main() {
   void *temp_pointer;
   connect_response_t connect_response;
   action_request_t *action_request;
-  action_response_t action_response;
   disconnect_request_t *disconnect_request;
-  disconnect_response_t disconnect_response;
+  aliens_update_request_t *alien_update_request;
+  only_status_code_response_t only_status_code_response;
 
   nc_init();
   game_window = nc_draw_space();
@@ -41,8 +44,12 @@ int main() {
 
   nc_draw_starting_aliens(game_window, game);
 
+  /* Spawn the aliens update process that knows the starting position of the
+   * aliens */
+  spawn_alien_update_fork(game.aliens);
+
   /* Game loop */
-  while (game.aliens_alive) {
+  while (game.aliens_alive || !joined_alien_process) {
     temp_pointer = zmq_receive_msg(rep_socket, &msg_type);
 
     switch (msg_type) {
@@ -69,7 +76,7 @@ int main() {
 
       status_code = validate_action_request(*action_request, game);
 
-      action_response.status_code = status_code;
+      only_status_code_response.status_code = status_code;
 
       /* Move the player or shoot and update state */
       if (status_code == 200) {
@@ -80,8 +87,8 @@ int main() {
           old_position.col = current_player->position.col;
           old_position.row = current_player->position.row;
 
-          update_player_position(current_player,
-                                 action_request->movement_direction);
+          update_position(&current_player->position,
+                          action_request->movement_direction);
 
           nc_move_player(game_window, *current_player, old_position);
         } else if (action_request->action_type == ZAP) {
@@ -89,7 +96,7 @@ int main() {
         }
       }
 
-      zmq_send_msg(rep_socket, ACTION_RESPONSE, &action_response);
+      zmq_send_msg(rep_socket, ACTION_RESPONSE, &only_status_code_response);
       break;
 
     case DISCONNECT_REQUEST:
@@ -97,7 +104,7 @@ int main() {
 
       status_code = validate_disconnect_request(*disconnect_request, game);
 
-      disconnect_response.status_code = status_code;
+      only_status_code_response.status_code = status_code;
 
       /* Remove player from screen and state */
       if (status_code == 200) {
@@ -106,10 +113,44 @@ int main() {
         current_player->connected = false;
       }
 
-      zmq_send_msg(rep_socket, DISCONNECT_RESPONSE, &disconnect_response);
+      zmq_send_msg(rep_socket, DISCONNECT_RESPONSE, &only_status_code_response);
       break;
 
     case ALIENS_UPDATE_REQUEST:
+      alien_update_request = (aliens_update_request_t *)temp_pointer;
+
+      if (game.aliens_alive) {
+        only_status_code_response.status_code = 200;
+
+        /*
+        Two loops to clean the old positions of the aliens and then put the
+        new ones (can't be done in just 1 iteration because there would be
+        problems with overlaps between new and old positions)
+        */
+        for (int i = 0; i < N_ALIENS; i++) {
+          alien = &game.aliens[i];
+          if (alien->alive)
+            nc_clean_position(game_window, alien->position);
+        }
+        for (int i = 0; i < N_ALIENS; i++) {
+          alien = &game.aliens[i];
+          if (alien->alive) {
+            alien->position.col = alien_update_request->aliens[i].position.col;
+            alien->position.row = alien_update_request->aliens[i].position.row;
+
+            nc_add_alien(game_window, &alien->position);
+          }
+        }
+
+      } else {
+        /* Game has ended, send 400 to terminate the other process */
+        only_status_code_response.status_code = 400;
+        joined_alien_process = true;
+      }
+
+      zmq_send_msg(rep_socket, ALIENS_UPDATE_RESPONSE,
+                   &only_status_code_response);
+
       break;
 
     default:

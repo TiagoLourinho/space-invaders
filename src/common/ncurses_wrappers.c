@@ -95,8 +95,7 @@ void nc_draw_starting_aliens(WINDOW *game_window, game_t game) {
   for (int i = 0; i < N_ALIENS; i++) {
     position_t *position = &game.aliens[i].position;
 
-    wmove(game_window, POS_TO_WIN(position->row), POS_TO_WIN(position->col));
-    waddch(game_window, '*' | A_BOLD);
+    nc_add_alien(game_window, position);
   }
 
   wrefresh(game_window);
@@ -112,6 +111,12 @@ void nc_update_screen(WINDOW *win) { wrefresh(win); }
 void nc_add_player(WINDOW *win, player_t player) {
   wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
   waddch(win, id_to_symbol(player.id) | A_BOLD);
+}
+
+/* Adds a alien to the screen */
+void nc_add_alien(WINDOW *game_window, position_t *position) {
+  wmove(game_window, POS_TO_WIN(position->row), POS_TO_WIN(position->col));
+  waddch(game_window, '*' | A_BOLD);
 }
 
 /* Move a player on the screen */
