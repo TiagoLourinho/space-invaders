@@ -36,7 +36,7 @@ int main() {
   game_window = nc_draw_space();
   score_window = nc_init_scoreboard();
 
-  zmq_bind_socket(rep_socket, SERVER_ADDRESS);
+  zmq_bind_socket(rep_socket, SERVER_ZMQ_BIND_ADDRESS);
 
   srand((unsigned int)time(NULL));
 

@@ -29,7 +29,7 @@ int main() {
   nc_init();
 
   /* Connect to server */
-  zmq_connect_socket(req_socket, SERVER_ADDRESS);
+  zmq_connect_socket(req_socket, SERVER_ZMQ_ADDRESS);
   msg_type = CONNECT_REQUEST;
   zmq_send_msg(req_socket, msg_type, NULL);
   connect_response =

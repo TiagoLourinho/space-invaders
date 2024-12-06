@@ -206,7 +206,7 @@ void spawn_alien_update_fork(alien_t *aliens) {
     aliens_update_request_t aliens_update_request;
     only_status_code_response_t *status_code_response;
 
-    zmq_connect_socket(req_socket, SERVER_ADDRESS);
+    zmq_connect_socket(req_socket, SERVER_ZMQ_ADDRESS);
 
     /* Initial copy of the aliens to the request struct */
     for (int i = 0; i < N_ALIENS; i++) {

@@ -5,7 +5,12 @@
 
 #include "game_def.h"
 
-#define SERVER_ADDRESS "tcp://127.0.0.1:5555"
+#define PROTOCOL "tcp"
+#define SERVER_IP "127.0.0.1"
+#define PORT "62762"
+
+#define SERVER_ZMQ_ADDRESS PROTOCOL "://" SERVER_IP ":" PORT
+#define SERVER_ZMQ_BIND_ADDRESS PROTOCOL "://*:" PORT
 
 /*
   Every message has 2 parts:
