@@ -24,6 +24,10 @@ void nc_draw_starting_aliens(WINDOW *game_window, game_t game);
 
 void nc_cleanup();
 
+void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap);
+
+void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap);
+
 void nc_update_screen(WINDOW *win);
 
 void nc_add_player(WINDOW *win, player_t player);

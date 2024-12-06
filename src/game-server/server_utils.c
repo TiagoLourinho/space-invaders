@@ -148,7 +148,7 @@ void update_position(position_t *position, MOVEMENT_DIRECTION direction) {
   }
 }
 
-/* Updates the screen and state when a player zaps */
+/* Updates state when a player zaps and kills the aliens */
 void player_zap(WINDOW *win, game_t *game, int player_id) {
   int aliens_killed = 0;
   alien_t *alien;
@@ -183,6 +183,7 @@ void player_zap(WINDOW *win, game_t *game, int player_id) {
 
     other_player = &game->players[i];
 
+    /* Player is stunned if aligned with the player that shot */
     if ((player->orientation == HORIZONTAL &&
          player->position.col == other_player->position.col) ||
         (player->orientation == VERTICAL &&
@@ -216,7 +217,7 @@ void spawn_alien_update_fork(alien_t *aliens) {
     }
 
     while (1) {
-      sleep(ALIEN_UPDATE);
+      usleep(ALIEN_UPDATE * 1000);
 
       /* Generate new positions for aliens */
       for (int i = 0; i < N_ALIENS; i++) {

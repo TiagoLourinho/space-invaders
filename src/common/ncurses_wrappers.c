@@ -6,6 +6,11 @@ void nc_init() {
   cbreak();
   keypad(stdscr, TRUE);
   noecho();
+
+  /* Draw letters and lasers with color */
+  start_color();
+  init_pair(1, COLOR_RED, COLOR_BLACK);
+  init_pair(2, COLOR_GREEN, COLOR_BLACK);
 }
 
 /* Draws game rectangle */
@@ -103,6 +108,73 @@ void nc_draw_starting_aliens(WINDOW *game_window, game_t game) {
 
 /* Stops and cleanup ncurses */
 void nc_cleanup() { endwin(); }
+
+/* Draws the zap line on the screen */
+void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap) {
+  player_t *other_player;
+
+  /* Draw laser in green (color pair 2) */
+  wattron(win, COLOR_PAIR(2));
+  for (int i = 0; i < SPACE_SIZE; i++) {
+
+    if (player_zap->orientation == VERTICAL) {
+      wmove(win, POS_TO_WIN(player_zap->position.row), POS_TO_WIN(i));
+      waddch(win, '-');
+    } else {
+      wmove(win, POS_TO_WIN(i), POS_TO_WIN(player_zap->position.col));
+      waddch(win, '|');
+    }
+  }
+  wattroff(win, COLOR_PAIR(2));
+
+  /* Add player that shot back to the screen */
+  nc_add_player(win, *player_zap);
+
+  /* Signal players that were stunned with red letters (color pair 1) */
+  wattron(win, COLOR_PAIR(1));
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    other_player = &game->players[i];
+
+    /* Player is stunned if aligned with the player that shot */
+    if (other_player->connected && other_player->id != player_zap->id) {
+      if ((player_zap->orientation == HORIZONTAL &&
+           player_zap->position.col == other_player->position.col) ||
+          (player_zap->orientation == VERTICAL &&
+           player_zap->position.row == other_player->position.row)) {
+        wmove(win, POS_TO_WIN(other_player->position.row),
+              POS_TO_WIN(other_player->position.col));
+        waddch(win, id_to_symbol(other_player->id) | A_BOLD);
+      }
+    }
+  }
+  wattroff(win, COLOR_PAIR(1));
+
+  wrefresh(win);
+};
+
+/* Cleans a zap from the screen */
+void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap) {
+  player_t *other_player;
+
+  /* Clean entire row/col */
+  for (int i = 0; i < SPACE_SIZE; i++) {
+    if (player_zap->orientation == VERTICAL)
+      wmove(win, POS_TO_WIN(player_zap->position.row), POS_TO_WIN(i));
+    else
+      wmove(win, POS_TO_WIN(i), POS_TO_WIN(player_zap->position.col));
+
+    waddch(win, ' ');
+  }
+
+  /* Add back players */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    other_player = &game->players[i];
+    if (other_player->connected)
+      nc_add_player(win, *other_player);
+  }
+
+  wrefresh(win);
+};
 
 /* Updates the screen */
 void nc_update_screen(WINDOW *win) { wrefresh(win); }

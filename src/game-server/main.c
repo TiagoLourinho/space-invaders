@@ -7,6 +7,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <zmq.h>
 
 int main() {
@@ -93,6 +94,9 @@ int main() {
           nc_move_player(game_window, *current_player, old_position);
         } else if (action_request->action_type == ZAP) {
           player_zap(game_window, &game, action_request->id);
+          nc_draw_zap(game_window, &game, current_player);
+          usleep(ZAP_TIME_ON_SCREEN * 1000);
+          nc_clean_zap(game_window, &game, current_player);
         }
       }
 

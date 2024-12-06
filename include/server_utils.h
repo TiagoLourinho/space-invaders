@@ -6,6 +6,7 @@
 #include "zeromq_wrapper.h"
 #include <ncurses.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void place_player(player_t *player);
 

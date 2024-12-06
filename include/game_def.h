@@ -12,7 +12,7 @@
 #define ZAP_TIME_ON_SCREEN 500 // ms
 #define ZAP_DELAY 3000         // ms
 #define STUNNED_DELAY 10000    // ms
-#define ALIEN_UPDATE 1         // s
+#define ALIEN_UPDATE 1000      // ms
 
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
 typedef enum { UP, RIGHT, DOWN, LEFT, NO_MOVEMENT } MOVEMENT_DIRECTION;
