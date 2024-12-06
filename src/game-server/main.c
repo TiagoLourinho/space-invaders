@@ -32,11 +32,11 @@ int main() {
   aliens_update_request_t *alien_update_request;
   only_status_code_response_t only_status_code_response;
 
+  zmq_bind_socket(rep_socket, SERVER_ZMQ_BIND_ADDRESS);
+
   nc_init();
   game_window = nc_draw_space();
   score_window = nc_init_scoreboard();
-
-  zmq_bind_socket(rep_socket, SERVER_ZMQ_BIND_ADDRESS);
 
   srand((unsigned int)time(NULL));
 

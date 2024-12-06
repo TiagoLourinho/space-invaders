@@ -26,8 +26,6 @@ int main() {
   int player_token;
   MOVEMENT_ORIENTATION player_orientation;
 
-  nc_init();
-
   /* Connect to server */
   zmq_connect_socket(req_socket, SERVER_ZMQ_ADDRESS);
   msg_type = CONNECT_REQUEST;
@@ -36,7 +34,8 @@ int main() {
       (connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
   if (connect_response->status_code != 200) {
-    printw("Game is full (%d players currently playing).\n", MAX_PLAYERS);
+    printf("Game is full (%d players currently playing).\n", MAX_PLAYERS);
+    zmq_cleanup(zmq_context, req_socket, NULL);
     exit(-1);
   } else {
     player_id = connect_response->id;
@@ -44,6 +43,8 @@ int main() {
     player_orientation = connect_response->orientation;
   }
   free(connect_response);
+
+  nc_init();
 
   /* Define known parts of the requests already */
   action_request.id = player_id;
