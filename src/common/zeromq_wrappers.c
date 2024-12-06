@@ -42,7 +42,13 @@ void *zmq_create_socket(void *context, int type) {
 /* Bind socket */
 void zmq_bind_socket(void *socket, char *address) {
   int rc = zmq_bind(socket, address);
-  assert(rc == 0);
+  if (rc != 0) {
+    printf("\n\nCouln't bind socket to %s. Another zombie process caused by an "
+           "abrupt exit might still be running. Check for 'game-server' "
+           "processes with top/htop.\n",
+           address);
+    exit(-1);
+  };
 }
 
 /* Connect socket */
