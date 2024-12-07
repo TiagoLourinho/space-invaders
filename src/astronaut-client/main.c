@@ -16,7 +16,7 @@ int main() {
   bool stop_playing = false;
 
   /* Structs to receive and send the requests */
-  connect_response_t *connect_response;
+  astronaut_connect_response_t *connect_response;
   action_request_t action_request;
   only_status_code_response_t *status_code_response;
   disconnect_request_t disconnect_request;
@@ -27,11 +27,11 @@ int main() {
   MOVEMENT_ORIENTATION player_orientation;
 
   /* Connect to server */
-  zmq_connect_socket(req_socket, SERVER_ZMQ_ADDRESS);
-  msg_type = CONNECT_REQUEST;
+  zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
+  msg_type = ASTRONAUT_CONNECT_REQUEST;
   zmq_send_msg(req_socket, msg_type, NULL);
   connect_response =
-      (connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
+      (astronaut_connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
   if (connect_response->status_code != 200) {
     printf("Game is full (%d players currently playing).\n", MAX_PLAYERS);

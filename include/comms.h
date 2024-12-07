@@ -7,10 +7,16 @@
 
 #define PROTOCOL "tcp"
 #define SERVER_IP "127.0.0.1"
-#define PORT "62762"
 
-#define SERVER_ZMQ_ADDRESS PROTOCOL "://" SERVER_IP ":" PORT
-#define SERVER_ZMQ_BIND_ADDRESS PROTOCOL "://*:" PORT
+/* REQREP STUFF */
+#define PORT_REQREP "62762"
+#define SERVER_ZMQ_REQREP_ADDRESS PROTOCOL "://" SERVER_IP ":" PORT_REQREP
+#define SERVER_ZMQ_REQREP_BIND_ADDRESS PROTOCOL "://*:" PORT_REQREP
+
+/* PUBSUB STUFF */
+#define PORT_PUBSUB "62763"
+#define SERVER_ZMQ_PUBSUB_ADDRESS PROTOCOL "://" SERVER_IP ":" PORT_PUBSUB
+#define SERVER_ZMQ_PUBSUB_BIND_ADDRESS PROTOCOL "://*:" PORT_PUBSUB
 
 /*
   Every message has 2 parts:
@@ -18,15 +24,29 @@
     - the message contents
 */
 typedef enum {
-  CONNECT_REQUEST, /* Only sends the header as no extra info is needed */
-  CONNECT_RESPONSE,
+  /* Only sends the header as no extra info is needed */
+  DISPLAY_CONNECT_REQUEST,
+  DISPLAY_CONNECT_RESPONSE,
+  /* Only sends the header as no extra info is needed */
+  ASTRONAUT_CONNECT_REQUEST,
+  ASTROUNAUT_CONNECT_RESPONSE,
   ACTION_REQUEST,
-  ACTION_RESPONSE, /* Only status code */
+  /* Only status code */
+  ACTION_RESPONSE,
   DISCONNECT_REQUEST,
-  DISCONNECT_RESPONSE, /* Only status code */
+  /* Only status code */
+  DISCONNECT_RESPONSE,
   ALIENS_UPDATE_REQUEST,
-  ALIENS_UPDATE_RESPONSE, /* Only status code */
+  /* Only status code */
+  ALIENS_UPDATE_RESPONSE,
 } MESSAGE_TYPE;
+
+typedef struct {
+  /* 200 if Ok, 400 otherwise */
+  int status_code;
+  /* The current state of the game when it connected (without tokens) */
+  game_t game;
+} display_connect_response_t;
 
 typedef struct {
   /* 200 if Ok, 400 otherwise */
@@ -37,7 +57,7 @@ typedef struct {
   MOVEMENT_ORIENTATION orientation;
   /* The token assigned to the player for authentication */
   int token;
-} connect_response_t;
+} astronaut_connect_response_t;
 
 typedef struct {
   /* The id assigned to the player (corresponds to the position on the players

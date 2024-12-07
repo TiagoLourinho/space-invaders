@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zmq.h>
 
 size_t get_msg_size(MESSAGE_TYPE type);
@@ -16,6 +17,8 @@ void *zmq_create_socket(void *context, int type);
 void zmq_bind_socket(void *socket, char *address);
 
 void zmq_connect_socket(void *socket, char *address);
+
+void zmq_subscribe(void *socket, char *topic);
 
 void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type);
 

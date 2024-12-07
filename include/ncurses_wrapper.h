@@ -20,7 +20,7 @@ WINDOW *nc_init_scoreboard();
 
 void nc_update_scoreboard(WINDOW *win, player_t *players);
 
-void nc_draw_starting_aliens(WINDOW *game_window, game_t game);
+void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game);
 
 void nc_cleanup();
 

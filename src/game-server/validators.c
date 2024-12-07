@@ -1,10 +1,11 @@
 #include "validators.h"
 
 /* Validate the action request and returns the status code */
-int validate_action_request(action_request_t request, game_t game) {
+int validate_action_request(action_request_t request, game_t game,
+                            int *tokens) {
 
   int id = request.id;
-  int token = request.token;
+  int request_token = request.token;
   player_t player;
   uint64_t current_ts = get_timestamp_ms();
 
@@ -19,7 +20,7 @@ int validate_action_request(action_request_t request, game_t game) {
     return 400;
 
   /* Token was invalid */
-  if (!(player.token == token))
+  if (!(tokens[id] == request_token))
     return 400;
 
   switch (request.action_type) {
@@ -66,10 +67,11 @@ int validate_action_request(action_request_t request, game_t game) {
 }
 
 /* Validates  the request and returns status code */
-int validate_disconnect_request(disconnect_request_t request, game_t game) {
+int validate_disconnect_request(disconnect_request_t request, game_t game,
+                                int *tokens) {
 
   int id = request.id;
-  int token = request.token;
+  int request_token = request.token;
   player_t player;
 
   /* ID not valid */
@@ -83,7 +85,7 @@ int validate_disconnect_request(disconnect_request_t request, game_t game) {
     return 400;
 
   /* Token was invalid */
-  if (!(player.token == token))
+  if (!(tokens[id] == request_token))
     return 400;
 
   return 200;

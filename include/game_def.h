@@ -39,8 +39,6 @@ typedef struct {
   /* Contains the timestamp (ms since epoch) where the player last shot (starts
    * at 0) */
   uint64_t last_shot;
-  /* The authentication token assigned to the player */
-  int token;
 } player_t;
 
 typedef struct {

@@ -94,16 +94,29 @@ void nc_update_scoreboard(WINDOW *win, player_t *players) {
   }
 }
 
-/* Draws the starting aliens on screen */
-void nc_draw_starting_aliens(WINDOW *game_window, game_t game) {
+/* Draws the elements necessary for a given game when initializing */
+void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
 
+  /* Draw aliens */
   for (int i = 0; i < N_ALIENS; i++) {
-    position_t *position = &game.aliens[i].position;
+    alien_t *alien = &game.aliens[i];
 
-    nc_add_alien(game_window, position);
+    if (alien->alive)
+      nc_add_alien(game_window, &alien->position);
   }
 
+  /* Draw players */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    player_t *player = &game.players[i];
+
+    if (player->connected)
+      nc_add_player(game_window, *player);
+  }
+
+  nc_update_scoreboard(score_window, game.players);
+
   wrefresh(game_window);
+  wrefresh(score_window);
 }
 
 /* Stops and cleanup ncurses */

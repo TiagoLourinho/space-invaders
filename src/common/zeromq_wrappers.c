@@ -3,11 +3,16 @@
 /* Returns the size of the followup message given the type */
 size_t get_msg_size(MESSAGE_TYPE type) {
   switch (type) {
-  case CONNECT_REQUEST:
+  case DISPLAY_CONNECT_REQUEST:
     /* Connect request doens't have a followup message with more info */
     return 0;
-  case CONNECT_RESPONSE:
-    return sizeof(connect_response_t);
+  case DISPLAY_CONNECT_RESPONSE:
+    return sizeof(display_connect_response_t);
+  case ASTRONAUT_CONNECT_REQUEST:
+    /* Connect request doens't have a followup message with more info */
+    return 0;
+  case ASTROUNAUT_CONNECT_RESPONSE:
+    return sizeof(astronaut_connect_response_t);
   case ACTION_REQUEST:
     return sizeof(action_request_t);
   case ACTION_RESPONSE:
@@ -54,6 +59,12 @@ void zmq_bind_socket(void *socket, char *address) {
 /* Connect socket */
 void zmq_connect_socket(void *socket, char *address) {
   int rc = zmq_connect(socket, address);
+  assert(rc == 0);
+}
+
+/* Subscribe to publisher */
+void zmq_subscribe(void *socket, char *topic) {
+  int rc = zmq_setsockopt(socket, ZMQ_SUBSCRIBE, topic, strlen(topic));
   assert(rc == 0);
 }
 
