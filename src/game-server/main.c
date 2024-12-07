@@ -14,9 +14,7 @@ int main() {
   game_t game;
   int tokens[MAX_PLAYERS]; /* The authentication tokens used by the players */
   player_t *current_player;
-  alien_t *alien;
-  position_t old_position;
-  int n, status_code;
+  int n;
   /* Controls if the other process has been terminated */
   bool joined_alien_process = false;
   /* Ncurses related */
@@ -64,24 +62,18 @@ int main() {
       zmq_send_msg(rep_socket, DISPLAY_CONNECT_RESPONSE,
                    &display_connect_response);
       break;
+
     case ASTRONAUT_CONNECT_REQUEST:
-      n = find_position_and_init_player(&game, tokens);
+      astronaut_connect_response.status_code = validate_connect_request(game);
 
-      if (n != -1) {
-        /* Return player info */
-        astronaut_connect_response.status_code = 200;
-        astronaut_connect_response.id = n;
-        astronaut_connect_response.token = tokens[n];
-        astronaut_connect_response.orientation = game.players[n].orientation;
+      if (astronaut_connect_response.status_code == 200) {
 
-        nc_add_player(game_window, game.players[n]);
-      } else {
-        astronaut_connect_response.status_code = 400;
-      }
-
-      /* Update displays */
-      if (astronaut_connect_response.status_code == 200)
+        /* Publish update */
         zmq_send_msg(pub_socket, ASTRONAUT_CONNECT_REQUEST, NULL);
+
+        handle_player_connect(game_window, &astronaut_connect_response, tokens,
+                              &game);
+      }
 
       zmq_send_msg(rep_socket, ASTROUNAUT_CONNECT_RESPONSE,
                    &astronaut_connect_response);
@@ -90,35 +82,16 @@ int main() {
     case ACTION_REQUEST:
       action_request = (action_request_t *)temp_pointer;
 
-      status_code = validate_action_request(*action_request, game, tokens);
+      only_status_code_response.status_code =
+          validate_action_request(*action_request, game, tokens);
 
-      only_status_code_response.status_code = status_code;
-
-      /* Update displays */
-      if (status_code == 200) {
+      if (only_status_code_response.status_code == 200) {
+        /* Publish update */
         action_request->token = -1; /* Invalidate token */
         zmq_send_msg(pub_socket, ACTION_REQUEST, action_request);
-      }
 
-      /* Move the player or shoot and update state */
-      if (status_code == 200) {
-        current_player = &game.players[action_request->id];
-
-        if (action_request->action_type == MOVE) {
-          /* Store old pos */
-          old_position.col = current_player->position.col;
-          old_position.row = current_player->position.row;
-
-          update_position(&current_player->position,
-                          action_request->movement_direction);
-
-          nc_move_player(game_window, *current_player, old_position);
-        } else if (action_request->action_type == ZAP) {
-          player_zap(game_window, &game, action_request->id);
-          nc_draw_zap(game_window, &game, current_player);
-          usleep(ZAP_TIME_ON_SCREEN * 1000);
-          nc_clean_zap(game_window, &game, current_player);
-        }
+        handle_player_action(action_request, &game.players[action_request->id],
+                             game_window, &game);
       }
 
       zmq_send_msg(rep_socket, ACTION_RESPONSE, &only_status_code_response);
@@ -127,22 +100,17 @@ int main() {
     case DISCONNECT_REQUEST:
       disconnect_request = (disconnect_request_t *)temp_pointer;
 
-      status_code =
+      only_status_code_response.status_code =
           validate_disconnect_request(*disconnect_request, game, tokens);
 
-      only_status_code_response.status_code = status_code;
+      if (only_status_code_response.status_code == 200) {
 
-      /* Remove player from screen and state */
-      if (status_code == 200) {
-        current_player = &game.players[disconnect_request->id];
-        nc_clean_position(game_window, current_player->position);
-        current_player->connected = false;
-      }
-
-      /* Update displays */
-      if (status_code == 200) {
+        /* Publish update */
         disconnect_request->token = -1; /* Invalidate token */
         zmq_send_msg(pub_socket, DISCONNECT_REQUEST, disconnect_request);
+
+        handle_player_disconnect(game_window,
+                                 &game.players[disconnect_request->id]);
       }
 
       zmq_send_msg(rep_socket, DISCONNECT_RESPONSE, &only_status_code_response);
@@ -154,25 +122,10 @@ int main() {
       if (game.aliens_alive) {
         only_status_code_response.status_code = 200;
 
-        /*
-        Two loops to clean the old positions of the aliens and then put the
-        new ones (can't be done in just 1 iteration because there would be
-        problems with overlaps between new and old positions)
-        */
-        for (int i = 0; i < N_ALIENS; i++) {
-          alien = &game.aliens[i];
-          if (alien->alive)
-            nc_clean_position(game_window, alien->position);
-        }
-        for (int i = 0; i < N_ALIENS; i++) {
-          alien = &game.aliens[i];
-          if (alien->alive) {
-            alien->position.col = alien_update_request->aliens[i].position.col;
-            alien->position.row = alien_update_request->aliens[i].position.row;
+        /* Publish update */
+        zmq_send_msg(pub_socket, ALIENS_UPDATE_REQUEST, alien_update_request);
 
-            nc_add_alien(game_window, &alien->position);
-          }
-        }
+        handle_aliens_updates(game_window, alien_update_request, &game);
 
       } else {
         /* Game has ended, send 400 to terminate the other process */
@@ -180,13 +133,8 @@ int main() {
         joined_alien_process = true;
       }
 
-      /* Update displays */
-      if (only_status_code_response.status_code == 200)
-        zmq_send_msg(pub_socket, ALIENS_UPDATE_REQUEST, alien_update_request);
-
       zmq_send_msg(rep_socket, ALIENS_UPDATE_RESPONSE,
                    &only_status_code_response);
-
       break;
 
     default:

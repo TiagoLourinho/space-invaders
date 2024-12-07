@@ -277,3 +277,78 @@ void copy_game_state(display_connect_response_t *response, game_t *game) {
     response->game.aliens[i].position.row = game->aliens[i].position.row;
   }
 }
+
+/* Handles the state and screen updates when a player connects */
+void handle_player_connect(
+    WINDOW *game_window,
+    astronaut_connect_response_t *astronaut_connect_response, int *tokens,
+    game_t *game) {
+
+  int idx = find_position_and_init_player(game, tokens);
+  assert(idx != -1);
+
+  /* Display application won't send a response */
+  if (astronaut_connect_response != NULL) {
+    astronaut_connect_response->id = idx;
+    astronaut_connect_response->token = tokens[idx];
+    astronaut_connect_response->orientation = game->players[idx].orientation;
+  }
+
+  nc_add_player(game_window, game->players[idx]);
+}
+
+/* Handles the state and screen updates when a player makes an action */
+void handle_player_action(action_request_t *action_request,
+                          player_t *current_player, WINDOW *game_window,
+                          game_t *game) {
+  position_t old_position;
+
+  if (action_request->action_type == MOVE) {
+    /* Store old pos */
+    old_position.col = current_player->position.col;
+    old_position.row = current_player->position.row;
+
+    update_position(&current_player->position,
+                    action_request->movement_direction);
+
+    nc_move_player(game_window, *current_player, old_position);
+  } else if (action_request->action_type == ZAP) {
+    player_zap(game_window, game, action_request->id);
+    nc_draw_zap(game_window, game, current_player);
+    usleep(ZAP_TIME_ON_SCREEN * 1000);
+    nc_clean_zap(game_window, game, current_player);
+  }
+}
+
+/* Handles the state and screen updates when a player disconnects */
+void handle_player_disconnect(WINDOW *game_window, player_t *current_player) {
+  nc_clean_position(game_window, current_player->position);
+  current_player->connected = false;
+}
+
+/* Handles the state and screen updates when the aliens positions are updated */
+void handle_aliens_updates(WINDOW *game_window,
+                           aliens_update_request_t *alien_update_request,
+                           game_t *game) {
+  alien_t *alien;
+
+  /*
+    Two loops to clean the old positions of the aliens and then put the
+    new ones (can't be done in just 1 iteration because there would be
+    problems with overlaps between new and old positions)
+  */
+  for (int i = 0; i < N_ALIENS; i++) {
+    alien = &game->aliens[i];
+    if (alien->alive)
+      nc_clean_position(game_window, alien->position);
+  }
+  for (int i = 0; i < N_ALIENS; i++) {
+    alien = &game->aliens[i];
+    if (alien->alive) {
+      alien->position.col = alien_update_request->aliens[i].position.col;
+      alien->position.row = alien_update_request->aliens[i].position.row;
+
+      nc_add_alien(game_window, &alien->position);
+    }
+  }
+}

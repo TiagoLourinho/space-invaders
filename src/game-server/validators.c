@@ -1,6 +1,18 @@
 #include "validators.h"
 
-/* Validate the action request and returns the status code */
+/* Validates the connect request and returns the status code  */
+int validate_connect_request(game_t game) {
+
+  /* Check if there is a free position to play */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    if (!game.players[i].connected)
+      return 200;
+  }
+
+  return 400;
+}
+
+/* Validates the action request and returns the status code */
 int validate_action_request(action_request_t request, game_t game,
                             int *tokens) {
 

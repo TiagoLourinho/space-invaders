@@ -14,11 +14,7 @@ int main() {
   void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
   void *sub_socket = zmq_create_socket(zmq_context, ZMQ_SUB);
   MESSAGE_TYPE msg_type;
-  int n;
   game_t *game;
-  player_t *current_player;
-  alien_t *alien;
-  position_t old_position;
   WINDOW *game_window, *score_window;
   /* Structs and temp pointer to receive/send requests/responses */
   void *temp_pointer;
@@ -52,65 +48,25 @@ int main() {
 
     switch (msg_type) {
     case ASTRONAUT_CONNECT_REQUEST:
-      /* No need to manage tokens */
-      n = find_position_and_init_player(game, NULL);
-
-      if (n != -1) {
-        nc_add_player(game_window, game->players[n]);
-      }
-
+      /* NULL because display doesn't send a reply or manage tokens */
+      handle_player_connect(game_window, NULL, NULL, game);
       break;
+
     case ACTION_REQUEST:
       action_request = (action_request_t *)temp_pointer;
-      current_player = &game->players[action_request->id];
-
-      if (action_request->action_type == MOVE) {
-        /* Store old pos */
-        old_position.col = current_player->position.col;
-        old_position.row = current_player->position.row;
-
-        update_position(&current_player->position,
-                        action_request->movement_direction);
-
-        nc_move_player(game_window, *current_player, old_position);
-      } else if (action_request->action_type == ZAP) {
-        player_zap(game_window, game, action_request->id);
-        nc_draw_zap(game_window, game, current_player);
-        usleep(ZAP_TIME_ON_SCREEN * 1000);
-        nc_clean_zap(game_window, game, current_player);
-      }
-
+      handle_player_action(action_request, &game->players[action_request->id],
+                           game_window, game);
       break;
+
     case DISCONNECT_REQUEST:
       disconnect_request = (disconnect_request_t *)temp_pointer;
-
-      current_player = &game->players[disconnect_request->id];
-      nc_clean_position(game_window, current_player->position);
-      current_player->connected = false;
+      handle_player_disconnect(game_window,
+                               &game->players[disconnect_request->id]);
       break;
+
     case ALIENS_UPDATE_REQUEST:
       alien_update_request = (aliens_update_request_t *)temp_pointer;
-
-      /*
-      Two loops to clean the old positions of the aliens and then put the
-      new ones (can't be done in just 1 iteration because there would be
-      problems with overlaps between new and old positions)
-      */
-      for (int i = 0; i < N_ALIENS; i++) {
-        alien = &game->aliens[i];
-        if (alien->alive)
-          nc_clean_position(game_window, alien->position);
-      }
-      for (int i = 0; i < N_ALIENS; i++) {
-        alien = &game->aliens[i];
-        if (alien->alive) {
-          alien->position.col = alien_update_request->aliens[i].position.col;
-          alien->position.row = alien_update_request->aliens[i].position.row;
-
-          nc_add_alien(game_window, &alien->position);
-        }
-      }
-
+      handle_aliens_updates(game_window, alien_update_request, game);
       break;
 
     default:

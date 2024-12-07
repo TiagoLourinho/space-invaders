@@ -31,4 +31,18 @@ void spawn_alien_update_fork(alien_t *aliens);
 
 void copy_game_state(display_connect_response_t *response, game_t *game);
 
+void handle_player_connect(
+    WINDOW *game_window,
+    astronaut_connect_response_t *astronaut_connect_response, int *tokens,
+    game_t *game);
+
+void handle_player_action(action_request_t *action_request,
+                          player_t *current_player, WINDOW *game_window,
+                          game_t *game);
+
+void handle_player_disconnect(WINDOW *game_window, player_t *current_player);
+
+void handle_aliens_updates(WINDOW *game_window,
+                           aliens_update_request_t *alien_update_request,
+                           game_t *game);
 #endif // UTILS_H
