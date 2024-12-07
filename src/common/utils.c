@@ -278,6 +278,30 @@ void copy_game_state(display_connect_response_t *response, game_t *game) {
   }
 }
 
+/* Finds and prints the winning player */
+void print_winning_player(game_t *game) {
+  int idx = -1;
+  player_t *current_player;
+
+  /* Find winning player */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    current_player = &game->players[i];
+
+    if (current_player->connected &&
+        (idx == -1 || current_player->score >= game->players[idx].score))
+      idx = i;
+  }
+
+  erase(); /* Clean entire ncurses screen */
+
+  if (idx != -1)
+    printw("Player %c won with %d points!\n", id_to_symbol(idx),
+           game->players[idx].score);
+
+  refresh(); /* Refresh entire ncurses screen */
+  sleep(5);
+}
+
 /* Handles the state and screen updates when a player connects */
 void handle_player_connect(
     WINDOW *game_window,

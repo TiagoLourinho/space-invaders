@@ -31,6 +31,8 @@ void spawn_alien_update_fork(alien_t *aliens);
 
 void copy_game_state(display_connect_response_t *response, game_t *game);
 
+void print_winning_player(game_t *game);
+
 void handle_player_connect(
     WINDOW *game_window,
     astronaut_connect_response_t *astronaut_connect_response, int *tokens,

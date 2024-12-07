@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "zeromq_wrapper.h"
 #include <ncurses.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -15,6 +16,7 @@ int main() {
   void *sub_socket = zmq_create_socket(zmq_context, ZMQ_SUB);
   MESSAGE_TYPE msg_type;
   game_t *game;
+  bool game_ended = false;
   WINDOW *game_window, *score_window;
   /* Structs and temp pointer to receive/send requests/responses */
   void *temp_pointer;
@@ -43,7 +45,7 @@ int main() {
   score_window = nc_init_scoreboard();
   nc_draw_init_game(game_window, score_window, *game);
 
-  while (true) {
+  while (!game_ended) {
     temp_pointer = zmq_receive_msg(sub_socket, &msg_type);
 
     switch (msg_type) {
@@ -69,6 +71,10 @@ int main() {
       handle_aliens_updates(game_window, alien_update_request, game);
       break;
 
+    case GAME_ENDED:
+      game_ended = true;
+      break;
+
     default:
       break;
     }
@@ -81,6 +87,8 @@ int main() {
     nc_update_screen(game_window);
     nc_update_screen(score_window);
   }
+
+  print_winning_player(game);
 
   free(display_connect_response);
   nc_cleanup();

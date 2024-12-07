@@ -13,8 +13,6 @@
 int main() {
   game_t game;
   int tokens[MAX_PLAYERS]; /* The authentication tokens used by the players */
-  player_t *current_player;
-  int n;
   /* Controls if the other process has been terminated */
   bool joined_alien_process = false;
   /* Ncurses related */
@@ -150,21 +148,10 @@ int main() {
     nc_update_screen(score_window);
   }
 
-  /* Clean screen and print winning player */
-  n = -1; // Temp variable to hold the winning player ID
-  for (int i = 0; i < MAX_PLAYERS; i++) {
-    current_player = &game.players[i];
+  /* Publish update */
+  zmq_send_msg(pub_socket, GAME_ENDED, NULL);
 
-    if (current_player->connected &&
-        (n == -1 || current_player->score >= game.players[n].score))
-      n = i;
-  }
-  erase(); /* Clean entire ncurses screen */
-  if (n != -1)
-    printw("Player %c won with %d points!\n", id_to_symbol(n),
-           game.players[n].score);
-  refresh(); /* Refresh entire ncurses screen */
-  sleep(5);
+  print_winning_player(&game);
 
   nc_cleanup();
   zmq_cleanup(zmq_context, rep_socket, pub_socket);

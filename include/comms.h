@@ -39,6 +39,7 @@ typedef enum {
   ALIENS_UPDATE_REQUEST,
   /* Only status code */
   ALIENS_UPDATE_RESPONSE,
+  GAME_ENDED,
 } MESSAGE_TYPE;
 
 typedef struct {
