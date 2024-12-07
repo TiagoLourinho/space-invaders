@@ -31,6 +31,7 @@ int main() {
   disconnect_request_t *disconnect_request;
   aliens_update_request_t *alien_update_request;
   only_status_code_response_t only_status_code_response;
+  status_code_and_score_response_t status_code_and_score_response;
 
   zmq_bind_socket(rep_socket, SERVER_ZMQ_REQREP_BIND_ADDRESS);
   zmq_bind_socket(pub_socket, SERVER_ZMQ_PUBSUB_BIND_ADDRESS);
@@ -80,28 +81,33 @@ int main() {
     case ACTION_REQUEST:
       action_request = (action_request_t *)temp_pointer;
 
-      only_status_code_response.status_code =
+      status_code_and_score_response.status_code =
           validate_action_request(*action_request, game, tokens);
 
-      if (only_status_code_response.status_code == 200) {
+      if (status_code_and_score_response.status_code == 200) {
+
         /* Publish update */
         action_request->token = -1; /* Invalidate token */
         zmq_send_msg(pub_socket, ACTION_REQUEST, action_request);
 
         handle_player_action(action_request, &game.players[action_request->id],
                              game_window, &game);
+
+        status_code_and_score_response.player_score =
+            game.players[action_request->id].score;
       }
 
-      zmq_send_msg(rep_socket, ACTION_RESPONSE, &only_status_code_response);
+      zmq_send_msg(rep_socket, ACTION_RESPONSE,
+                   &status_code_and_score_response);
       break;
 
     case DISCONNECT_REQUEST:
       disconnect_request = (disconnect_request_t *)temp_pointer;
 
-      only_status_code_response.status_code =
+      status_code_and_score_response.status_code =
           validate_disconnect_request(*disconnect_request, game, tokens);
 
-      if (only_status_code_response.status_code == 200) {
+      if (status_code_and_score_response.status_code == 200) {
 
         /* Publish update */
         disconnect_request->token = -1; /* Invalidate token */
@@ -109,9 +115,13 @@ int main() {
 
         handle_player_disconnect(game_window,
                                  &game.players[disconnect_request->id]);
+
+        status_code_and_score_response.player_score =
+            game.players[disconnect_request->id].score;
       }
 
-      zmq_send_msg(rep_socket, DISCONNECT_RESPONSE, &only_status_code_response);
+      zmq_send_msg(rep_socket, DISCONNECT_RESPONSE,
+                   &status_code_and_score_response);
       break;
 
     case ALIENS_UPDATE_REQUEST:

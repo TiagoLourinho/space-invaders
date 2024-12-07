@@ -31,10 +31,10 @@ typedef enum {
   ASTRONAUT_CONNECT_REQUEST,
   ASTROUNAUT_CONNECT_RESPONSE,
   ACTION_REQUEST,
-  /* Only status code */
+  /* Status code and score */
   ACTION_RESPONSE,
   DISCONNECT_REQUEST,
-  /* Only status code */
+  /* Status code and score */
   DISCONNECT_RESPONSE,
   ALIENS_UPDATE_REQUEST,
   /* Only status code */
@@ -86,5 +86,11 @@ typedef struct {
   /* 200 if Ok, 400 otherwise */
   int status_code;
 } only_status_code_response_t;
+
+typedef struct {
+  /* 200 if Ok, 400 otherwise */
+  int status_code;
+  int player_score;
+} status_code_and_score_response_t;
 
 #endif // COMMS_H

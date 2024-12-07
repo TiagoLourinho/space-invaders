@@ -18,12 +18,13 @@ int main() {
   /* Structs to receive and send the requests */
   astronaut_connect_response_t *connect_response;
   action_request_t action_request;
-  only_status_code_response_t *status_code_response;
+  status_code_and_score_response_t *status_code_and_score_response;
   disconnect_request_t disconnect_request;
 
   /* Player info (received when connected)*/
   int player_id;
   int player_token;
+  int player_score = 0;
   MOVEMENT_ORIENTATION player_orientation;
 
   /* Connect to server */
@@ -63,7 +64,7 @@ int main() {
     printw("\t LEFT ARROW\t-> Move left\n");
   }
   printw("\t SPACEBAR\t-> Zap\n");
-  printw("\t q/Q\t\t-> Stop playing\n");
+  printw("\t q/Q\t\t-> Stop playing\n\n");
 
   /* Game loop */
   while (!stop_playing) {
@@ -111,10 +112,12 @@ int main() {
       stop_playing = true;
       msg_type = DISCONNECT_REQUEST;
       zmq_send_msg(req_socket, msg_type, &disconnect_request);
-      status_code_response =
-          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
-      assert(status_code_response->status_code == 200);
-      free(status_code_response);
+      status_code_and_score_response =
+          (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
+                                                              &msg_type);
+      assert(status_code_and_score_response->status_code == 200);
+      player_score = status_code_and_score_response->player_score;
+      free(status_code_and_score_response);
       break;
 
     default:
@@ -128,13 +131,18 @@ int main() {
       msg_type = ACTION_REQUEST;
       zmq_send_msg(req_socket, msg_type, &action_request);
 
-      status_code_response =
-          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
-
-      free(status_code_response);
+      status_code_and_score_response =
+          (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
+                                                              &msg_type);
+      player_score = status_code_and_score_response->player_score;
+      free(status_code_and_score_response);
 
       send_action_message = false;
     }
+
+    /* Position cursor and print score */
+    move(8, 0);
+    printw("Current score: %d\n", player_score);
   }
 
   zmq_cleanup(zmq_context, req_socket, NULL);
