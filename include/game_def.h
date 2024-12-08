@@ -1,4 +1,4 @@
-/* Defines game-related */
+/* Defines game-related information */
 
 #ifndef GAME_DEF_H
 #define GAME_DEF_H
@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Gamge configuration */
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 #define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
@@ -14,10 +15,12 @@
 #define STUNNED_DELAY 10000    // ms
 #define ALIEN_UPDATE 1000      // ms
 
+/* Action enums */
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;
 typedef enum { UP, RIGHT, DOWN, LEFT, NO_MOVEMENT } MOVEMENT_DIRECTION;
 typedef enum { MOVE, ZAP } ACTION_TYPE;
 
+/* Game-related structures */
 typedef struct {
   int row;
   int col;

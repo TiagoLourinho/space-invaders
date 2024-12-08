@@ -8,29 +8,30 @@
 #include <zmq.h>
 
 int main() {
+  /* ZeroMQ/comms related */
   void *zmq_context = zmq_get_context();
   void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
   MESSAGE_TYPE msg_type;
-  int key_pressed;
   bool send_action_message = false;
-  bool stop_playing = false;
-
   /* Structs to receive and send the requests */
   astronaut_connect_response_t *connect_response;
   action_request_t action_request;
   status_code_and_score_response_t *status_code_and_score_response;
   disconnect_request_t disconnect_request;
-
+  /* Game management related */
+  int key_pressed;
+  bool stop_playing = false;
   /* Player info (received when connected)*/
   int player_id;
   int player_token;
   int player_score = 0;
   MOVEMENT_ORIENTATION player_orientation;
 
-  /* Connect to server */
+  /* ZeroMQ initialization */
   zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
-  msg_type = ASTRONAUT_CONNECT_REQUEST;
-  zmq_send_msg(req_socket, msg_type, NULL);
+
+  /* Connect to server to get player info */
+  zmq_send_msg(req_socket, ASTRONAUT_CONNECT_REQUEST, NULL);
   connect_response =
       (astronaut_connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
 
@@ -45,6 +46,7 @@ int main() {
   }
   free(connect_response);
 
+  /* Ncurses initialization */
   nc_init();
 
   /* Define known parts of the requests already */
@@ -53,7 +55,7 @@ int main() {
   disconnect_request.id = player_id;
   disconnect_request.token = player_token;
 
-  /* Print instructions */
+  /* Print game instructions */
   printw("You are playing as player: %c\n\n", id_to_symbol(player_id));
   printw("Controls:\n");
   if (player_orientation == VERTICAL) {
@@ -78,6 +80,7 @@ int main() {
       action_request.action_type = MOVE;
       action_request.movement_direction = UP;
       break;
+
     case KEY_DOWN:
       if (player_orientation == HORIZONTAL) /* Player can't move vertically */
         break;
@@ -85,6 +88,7 @@ int main() {
       action_request.action_type = MOVE;
       action_request.movement_direction = DOWN;
       break;
+
     case KEY_LEFT:
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
@@ -92,6 +96,7 @@ int main() {
       action_request.action_type = MOVE;
       action_request.movement_direction = LEFT;
       break;
+
     case KEY_RIGHT:
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
@@ -99,19 +104,20 @@ int main() {
       action_request.action_type = MOVE;
       action_request.movement_direction = RIGHT;
       break;
+
     case 32: // Spacebar
       send_action_message = true;
       action_request.action_type = ZAP;
       action_request.movement_direction = NO_MOVEMENT;
       break;
+
     case 113: // q
     case 81:  // Q
 
       /* Send disconnect message and stop playing */
       send_action_message = false;
       stop_playing = true;
-      msg_type = DISCONNECT_REQUEST;
-      zmq_send_msg(req_socket, msg_type, &disconnect_request);
+      zmq_send_msg(req_socket, DISCONNECT_REQUEST, &disconnect_request);
       status_code_and_score_response =
           (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
                                                               &msg_type);
@@ -128,8 +134,7 @@ int main() {
 
     /* Only send the message if a valid action key was pressed */
     if (send_action_message) {
-      msg_type = ACTION_REQUEST;
-      zmq_send_msg(req_socket, msg_type, &action_request);
+      zmq_send_msg(req_socket, ACTION_REQUEST, &action_request);
 
       status_code_and_score_response =
           (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
@@ -140,11 +145,12 @@ int main() {
       send_action_message = false;
     }
 
-    /* Position cursor and print score */
+    /* Position cursor and print current score */
     move(8, 0);
     printw("Current score: %d\n", player_score);
   }
 
+  /* Resources cleanup */
   zmq_cleanup(zmq_context, req_socket, NULL);
   nc_cleanup();
 

@@ -12,30 +12,49 @@
  * border)*/
 #define POS_TO_WIN(val) ((val) + 1)
 
+/******************** Initialization functions ********************/
+
+/* Initializes ncurses */
 void nc_init();
 
-WINDOW *nc_draw_space();
+/* Draws game rectangle */
+WINDOW *nc_init_space();
 
+/* Draws score rectangle */
 WINDOW *nc_init_scoreboard();
 
-void nc_update_scoreboard(WINDOW *win, player_t *players);
-
+/* Draws the elements necessary for a given game when initializing */
 void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game);
 
-void nc_cleanup();
+/******************** Updating screen ********************/
 
-void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap);
+/* Helper function to sort players based on score */
+int __compare_players(const void *a, const void *b);
 
-void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap);
+/* Resets and updates the scoreboard */
+void nc_update_scoreboard(WINDOW *win, player_t *players);
 
-void nc_update_screen(WINDOW *win);
-
+/* Adds a player to the screen */
 void nc_add_player(WINDOW *win, player_t player);
 
-void nc_add_alien(WINDOW *game_window, position_t *position);
-
+/* Move a player on the screen */
 void nc_move_player(WINDOW *win, player_t player, position_t old_pos);
 
+/* Draws the zap line on the screen */
+void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap);
+
+/* Adds a alien to the screen */
+void nc_add_alien(WINDOW *game_window, position_t *position);
+
+/******************** Cleaning screen ********************/
+
+/* Cleans a position from the screen */
 void nc_clean_position(WINDOW *win, position_t position);
+
+/* Cleans a zap from the screen */
+void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap);
+
+/* Stops and cleanup ncurses */
+void nc_cleanup();
 
 #endif // NCURSES_WRAPPER_H

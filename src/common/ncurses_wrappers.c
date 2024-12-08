@@ -1,4 +1,8 @@
+/* Contains utility wrappers around the ncurses library */
+
 #include "ncurses_wrapper.h"
+
+/******************** Initialization functions ********************/
 
 /* Initializes ncurses */
 void nc_init() {
@@ -14,7 +18,7 @@ void nc_init() {
 }
 
 /* Draws game rectangle */
-WINDOW *nc_draw_space() {
+WINDOW *nc_init_space() {
 
   /*
     Creates a window and draws a border
@@ -46,6 +50,33 @@ WINDOW *nc_init_scoreboard() {
 
   return win;
 }
+
+/* Draws the elements necessary for a given game when initializing */
+void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
+
+  /* Draw aliens */
+  for (int i = 0; i < N_ALIENS; i++) {
+    alien_t *alien = &game.aliens[i];
+
+    if (alien->alive)
+      nc_add_alien(game_window, &alien->position);
+  }
+
+  /* Draw players */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    player_t *player = &game.players[i];
+
+    if (player->connected)
+      nc_add_player(game_window, *player);
+  }
+
+  nc_update_scoreboard(score_window, game.players);
+
+  wrefresh(game_window);
+  wrefresh(score_window);
+}
+
+/******************** Updating screen ********************/
 
 /* Helper function to sort players based on score */
 int __compare_players(const void *a, const void *b) {
@@ -94,33 +125,20 @@ void nc_update_scoreboard(WINDOW *win, player_t *players) {
   }
 }
 
-/* Draws the elements necessary for a given game when initializing */
-void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
-
-  /* Draw aliens */
-  for (int i = 0; i < N_ALIENS; i++) {
-    alien_t *alien = &game.aliens[i];
-
-    if (alien->alive)
-      nc_add_alien(game_window, &alien->position);
-  }
-
-  /* Draw players */
-  for (int i = 0; i < MAX_PLAYERS; i++) {
-    player_t *player = &game.players[i];
-
-    if (player->connected)
-      nc_add_player(game_window, *player);
-  }
-
-  nc_update_scoreboard(score_window, game.players);
-
-  wrefresh(game_window);
-  wrefresh(score_window);
+/* Adds a player to the screen */
+void nc_add_player(WINDOW *win, player_t player) {
+  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+  waddch(win, id_to_symbol(player.id) | A_BOLD);
 }
 
-/* Stops and cleanup ncurses */
-void nc_cleanup() { endwin(); }
+/* Move a player on the screen */
+void nc_move_player(WINDOW *win, player_t player, position_t old_pos) {
+  wmove(win, POS_TO_WIN(old_pos.row), POS_TO_WIN(old_pos.col));
+  waddch(win, ' ' | A_BOLD);
+
+  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
+  waddch(win, id_to_symbol(player.id) | A_BOLD);
+}
 
 /* Draws the zap line on the screen */
 void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap) {
@@ -165,6 +183,20 @@ void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap) {
   wrefresh(win);
 };
 
+/* Adds a alien to the screen */
+void nc_add_alien(WINDOW *game_window, position_t *position) {
+  wmove(game_window, POS_TO_WIN(position->row), POS_TO_WIN(position->col));
+  waddch(game_window, '*' | A_BOLD);
+}
+
+/******************** Cleaning screen ********************/
+
+/* Cleans a position from the screen */
+void nc_clean_position(WINDOW *win, position_t position) {
+  wmove(win, POS_TO_WIN(position.row), POS_TO_WIN(position.col));
+  waddch(win, ' ' | A_BOLD);
+}
+
 /* Cleans a zap from the screen */
 void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap) {
   player_t *other_player;
@@ -189,32 +221,5 @@ void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap) {
   wrefresh(win);
 };
 
-/* Updates the screen */
-void nc_update_screen(WINDOW *win) { wrefresh(win); }
-
-/* Adds a player to the screen */
-void nc_add_player(WINDOW *win, player_t player) {
-  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
-  waddch(win, id_to_symbol(player.id) | A_BOLD);
-}
-
-/* Adds a alien to the screen */
-void nc_add_alien(WINDOW *game_window, position_t *position) {
-  wmove(game_window, POS_TO_WIN(position->row), POS_TO_WIN(position->col));
-  waddch(game_window, '*' | A_BOLD);
-}
-
-/* Move a player on the screen */
-void nc_move_player(WINDOW *win, player_t player, position_t old_pos) {
-  wmove(win, POS_TO_WIN(old_pos.row), POS_TO_WIN(old_pos.col));
-  waddch(win, ' ' | A_BOLD);
-
-  wmove(win, POS_TO_WIN(player.position.row), POS_TO_WIN(player.position.col));
-  waddch(win, id_to_symbol(player.id) | A_BOLD);
-}
-
-/* Cleans a position from the screen */
-void nc_clean_position(WINDOW *win, position_t position) {
-  wmove(win, POS_TO_WIN(position.row), POS_TO_WIN(position.col));
-  waddch(win, ' ' | A_BOLD);
-}
+/* Stops and cleanup ncurses */
+void nc_cleanup() { endwin(); }

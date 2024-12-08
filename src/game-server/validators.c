@@ -1,3 +1,5 @@
+/* Defines validators for each request received by the client */
+
 #include "validators.h"
 
 /* Validates the connect request and returns the status code  */

@@ -1,37 +1,8 @@
+/* Contains utility wrappers around the zeromq library */
+
 #include "zeromq_wrapper.h"
 
-/* Returns the size of the followup message given the type */
-size_t get_msg_size(MESSAGE_TYPE type) {
-  switch (type) {
-  case DISPLAY_CONNECT_REQUEST:
-    /* Connect request doens't have a followup message with more info */
-    return 0;
-  case DISPLAY_CONNECT_RESPONSE:
-    return sizeof(display_connect_response_t);
-  case ASTRONAUT_CONNECT_REQUEST:
-    /* Connect request doens't have a followup message with more info */
-    return 0;
-  case ASTROUNAUT_CONNECT_RESPONSE:
-    return sizeof(astronaut_connect_response_t);
-  case ACTION_REQUEST:
-    return sizeof(action_request_t);
-  case ACTION_RESPONSE:
-    return sizeof(status_code_and_score_response_t);
-  case DISCONNECT_REQUEST:
-    return sizeof(disconnect_request_t);
-  case DISCONNECT_RESPONSE:
-    return sizeof(status_code_and_score_response_t);
-  case ALIENS_UPDATE_REQUEST:
-    return sizeof(aliens_update_request_t);
-  case ALIENS_UPDATE_RESPONSE:
-    return sizeof(only_status_code_response_t);
-  case GAME_ENDED:
-    /* Game ended doesn't have any follow up message */
-    return 0;
-  default:
-    exit(-1);
-  }
-}
+/******************** Socket creation and initialization ********************/
 
 /* Initializes zmq and gets context */
 void *zmq_get_context() {
@@ -70,6 +41,8 @@ void zmq_subscribe(void *socket, char *topic) {
   int rc = zmq_setsockopt(socket, ZMQ_SUBSCRIBE, topic, strlen(topic));
   assert(rc == 0);
 }
+
+/******************** Sending and receiving messages ********************/
 
 /*
 Receive messages (first the type then the actual message)
@@ -117,6 +90,8 @@ void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg) {
   }
 }
 
+/******************** Cleanup ********************/
+
 /* Cleanup zmq */
 void zmq_cleanup(void *context, void *socket1, void *socket2) {
   int n;
@@ -133,4 +108,39 @@ void zmq_cleanup(void *context, void *socket1, void *socket2) {
 
   n = zmq_ctx_destroy(context);
   assert(n == 0);
+}
+
+/******************** Utilities ********************/
+
+/* Returns the size of the followup message given the type */
+size_t get_msg_size(MESSAGE_TYPE type) {
+  switch (type) {
+  case DISPLAY_CONNECT_REQUEST:
+    /* Connect request doens't have a followup message with more info */
+    return 0;
+  case DISPLAY_CONNECT_RESPONSE:
+    return sizeof(display_connect_response_t);
+  case ASTRONAUT_CONNECT_REQUEST:
+    /* Connect request doens't have a followup message with more info */
+    return 0;
+  case ASTROUNAUT_CONNECT_RESPONSE:
+    return sizeof(astronaut_connect_response_t);
+  case ACTION_REQUEST:
+    return sizeof(action_request_t);
+  case ACTION_RESPONSE:
+    return sizeof(status_code_and_score_response_t);
+  case DISCONNECT_REQUEST:
+    return sizeof(disconnect_request_t);
+  case DISCONNECT_RESPONSE:
+    return sizeof(status_code_and_score_response_t);
+  case ALIENS_UPDATE_REQUEST:
+    return sizeof(aliens_update_request_t);
+  case ALIENS_UPDATE_RESPONSE:
+    return sizeof(only_status_code_response_t);
+  case GAME_ENDED:
+    /* Game ended doesn't have any follow up message */
+    return 0;
+  default:
+    exit(-1);
+  }
 }
