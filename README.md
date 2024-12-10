@@ -38,7 +38,7 @@ _Note: Optionally, you can clean the project before building by running `make cl
 
 ### Starting the Game
 
-After compiling the executables, start the components in the for example in the following order from the project's root directory:
+After compiling the executables, start the components for example in the following order from the project's root directory:
 
 1. Launch the game server: 
 
