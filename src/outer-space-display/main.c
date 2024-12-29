@@ -21,7 +21,7 @@ int main() {
   display_connect_response_t *display_connect_response;
   action_request_t *action_request;
   disconnect_request_t *disconnect_request;
-  aliens_update_request_t *alien_update_request;
+  aliens_update_t *alien_update_request;
   /* Ncurses related */
   WINDOW *game_window, *score_window;
   /* Game management related */
@@ -68,8 +68,8 @@ int main() {
                                &game->players[disconnect_request->id]);
       break;
 
-    case ALIENS_UPDATE_REQUEST:
-      alien_update_request = (aliens_update_request_t *)temp_pointer;
+    case ALIENS_UPDATE:
+      alien_update_request = (aliens_update_t *)temp_pointer;
       handle_aliens_updates(game_window, alien_update_request, game);
       break;
 

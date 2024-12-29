@@ -4,6 +4,8 @@
 #define COMMS_H
 
 #include "game_def.h"
+#include <ncurses.h>
+#include <pthread.h>
 
 #define PROTOCOL "tcp"
 #define SERVER_IP "127.0.0.1"
@@ -55,11 +57,10 @@ typedef enum {
   DISCONNECT_REQUEST,
   /* Only contains the status code and score */
   DISCONNECT_RESPONSE,
-  ALIENS_UPDATE_REQUEST,
-  /* Only contains the status code */
-  ALIENS_UPDATE_RESPONSE,
   /* Used to broadcast that the game has ended */
   GAME_ENDED,
+  /* Used to broadcast the aliens status and positions */
+  ALIENS_UPDATE,
 } MESSAGE_TYPE;
 
 /******************** Requests structs ********************/
@@ -103,10 +104,6 @@ typedef struct {
 } astronaut_connect_response_t;
 
 typedef struct {
-  alien_t aliens[N_ALIENS];
-} aliens_update_request_t;
-
-typedef struct {
   /* 200 if Ok, 400 otherwise */
   int status_code;
 } only_status_code_response_t;
@@ -116,5 +113,20 @@ typedef struct {
   int status_code;
   int player_score;
 } status_code_and_score_response_t;
+
+/******************** Other broadcasted structs ********************/
+
+typedef struct {
+  alien_t aliens[N_ALIENS];
+} aliens_update_t;
+
+/******************** Thread args structs ********************/
+
+typedef struct {
+  game_t *game;
+  WINDOW *game_window;
+  void *pub_socket;
+  pthread_mutex_t *lock;
+} aliens_update_thread_args_t;
 
 #endif // COMMS_H

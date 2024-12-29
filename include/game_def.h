@@ -10,10 +10,12 @@
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 #define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
-#define ZAP_TIME_ON_SCREEN 500 // ms
-#define ZAP_DELAY 3000         // ms
-#define STUNNED_DELAY 10000    // ms
-#define ALIEN_UPDATE 1000      // ms
+#define ZAP_TIME_ON_SCREEN 500         // ms
+#define ZAP_DELAY 3000                 // ms
+#define STUNNED_DELAY 10000            // ms
+#define ALIEN_UPDATE 1000              // ms
+#define ALIEN_REGENERATION_DELAY 10000 // ms
+#define ALIEN_REGENERATION_FACTOR 0.1
 
 /* Action enums */
 typedef enum { VERTICAL, HORIZONTAL } MOVEMENT_ORIENTATION;

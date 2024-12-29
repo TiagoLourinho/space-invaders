@@ -4,7 +4,6 @@
 #include "game_def.h"
 #include "ncurses_wrapper.h"
 #include "zeromq_wrapper.h"
-#include <ncurses.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,13 +28,12 @@ void handle_player_disconnect(WINDOW *game_window, player_t *current_player);
 
 /* Handles the state and screen updates when the aliens positions are updated */
 void handle_aliens_updates(WINDOW *game_window,
-                           aliens_update_request_t *alien_update_request,
-                           game_t *game);
+                           aliens_update_t *alien_update_request, game_t *game);
 
 /******************** Aliens management ********************/
 
-/* Spawns the process responsible for updating the aliens */
-void spawn_alien_update_fork(alien_t *aliens);
+/* Threaded function responsible for updating the aliens */
+void *aliens_update_thread(void *void_args);
 
 /* Places the alien on the board */
 void place_alien(alien_t *alien);

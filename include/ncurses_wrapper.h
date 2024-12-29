@@ -44,7 +44,7 @@ void nc_move_player(WINDOW *win, player_t player, position_t old_pos);
 void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap);
 
 /* Adds a alien to the screen */
-void nc_add_alien(WINDOW *game_window, position_t *position);
+void nc_add_alien(WINDOW *game_window, position_t *position, bool regenerated);
 
 /******************** Cleaning screen ********************/
 

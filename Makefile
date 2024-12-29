@@ -1,7 +1,7 @@
 # Compiler settings
 CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude # All ".h" will be inside include/
-LDFLAGS = -lncurses -lzmq 
+LDFLAGS = -lncurses -lzmq -lpthread 
 
 # Collect all ".c" files inside common and generate the corresponding ".o" in bin
 COMMON_SRCS = $(wildcard src/common/*.c)

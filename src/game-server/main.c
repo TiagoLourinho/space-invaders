@@ -5,6 +5,7 @@
 #include "validators.h"
 #include "zeromq_wrapper.h"
 #include <ncurses.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -22,16 +23,16 @@ int main() {
   display_connect_response_t display_connect_response;
   action_request_t *action_request;
   disconnect_request_t *disconnect_request;
-  aliens_update_request_t *alien_update_request;
-  only_status_code_response_t only_status_code_response;
   status_code_and_score_response_t status_code_and_score_response;
   /* Ncurses related */
   WINDOW *game_window, *score_window;
   /* Game state and authentication management */
   game_t game;
   int tokens[MAX_PLAYERS]; /* The authentication tokens used by the players */
-  bool joined_alien_process =
-      false; /* Controls if the other process has been terminated */
+  /* Aliens update thread */
+  pthread_t thread_id;
+  aliens_update_thread_args_t thread_args;
+  pthread_mutex_t lock;
 
   /* ZeroMQ initialization */
   zmq_bind_socket(rep_socket, SERVER_ZMQ_REQREP_BIND_ADDRESS);
@@ -46,11 +47,28 @@ int main() {
   srand((unsigned int)time(NULL)); /* Used for the aliens positions */
   init_game(&game, tokens);
   nc_draw_init_game(game_window, score_window, game);
-  spawn_alien_update_fork(game.aliens);
+
+  /* Aliens update thread creation */
+  if (pthread_mutex_init(&lock, NULL) != 0)
+    exit(-1);
+  thread_args.game = &game;
+  thread_args.game_window = game_window;
+  thread_args.pub_socket = pub_socket;
+  thread_args.lock = &lock;
+  if (pthread_create(&thread_id, NULL, aliens_update_thread, &thread_args) != 0)
+    exit(-1);
 
   /* Game loop */
-  while (game.aliens_alive || !joined_alien_process) {
+  while (game.aliens_alive) {
     temp_pointer = zmq_receive_msg(rep_socket, &msg_type);
+
+    /*
+    ========= Entering critical region =========
+
+    The thread of the aliens update uses the game state, game window and publish
+    socket, so the requests can't be handled without using those resources
+    */
+    pthread_mutex_lock(&lock);
 
     switch (msg_type) {
     case DISPLAY_CONNECT_REQUEST: /* Received by the displays clients */
@@ -119,27 +137,6 @@ int main() {
                    &status_code_and_score_response);
       break;
 
-    case ALIENS_UPDATE_REQUEST: /* Received by the child process */
-      alien_update_request = (aliens_update_request_t *)temp_pointer;
-
-      if (game.aliens_alive) {
-        only_status_code_response.status_code = 200;
-
-        /* Publish update */
-        zmq_send_msg(pub_socket, ALIENS_UPDATE_REQUEST, alien_update_request);
-
-        handle_aliens_updates(game_window, alien_update_request, &game);
-
-      } else {
-        /* Game has ended, send 400 to terminate the other process */
-        only_status_code_response.status_code = 400;
-        joined_alien_process = true;
-      }
-
-      zmq_send_msg(rep_socket, ALIENS_UPDATE_RESPONSE,
-                   &only_status_code_response);
-      break;
-
     default:
       continue;
     }
@@ -151,6 +148,9 @@ int main() {
     nc_update_scoreboard(score_window, game.players);
     wrefresh(game_window);
     wrefresh(score_window);
+
+    /* ========= Leaving critical region ========= */
+    pthread_mutex_unlock(&lock);
   }
 
   /* Publish final update because game ended */
@@ -159,6 +159,8 @@ int main() {
   print_winning_player(&game);
 
   /* Resources cleanup */
+  pthread_join(thread_id, NULL);
+  pthread_mutex_destroy(&lock);
   nc_cleanup();
   zmq_cleanup(zmq_context, rep_socket, pub_socket);
 }

@@ -133,10 +133,8 @@ size_t get_msg_size(MESSAGE_TYPE type) {
     return sizeof(disconnect_request_t);
   case DISCONNECT_RESPONSE:
     return sizeof(status_code_and_score_response_t);
-  case ALIENS_UPDATE_REQUEST:
-    return sizeof(aliens_update_request_t);
-  case ALIENS_UPDATE_RESPONSE:
-    return sizeof(only_status_code_response_t);
+  case ALIENS_UPDATE:
+    return sizeof(aliens_update_t);
   case GAME_ENDED:
     /* Game ended doesn't have any follow up message */
     return 0;

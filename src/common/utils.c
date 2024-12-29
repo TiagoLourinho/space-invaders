@@ -54,9 +54,10 @@ void handle_player_disconnect(WINDOW *game_window, player_t *current_player) {
 
 /* Handles the state and screen updates when the aliens positions are updated */
 void handle_aliens_updates(WINDOW *game_window,
-                           aliens_update_request_t *alien_update_request,
+                           aliens_update_t *alien_update_request,
                            game_t *game) {
   alien_t *alien;
+  bool regenerated;
 
   /*
     Two loops to clean the old positions of the aliens and then put the
@@ -70,65 +71,95 @@ void handle_aliens_updates(WINDOW *game_window,
   }
   for (int i = 0; i < N_ALIENS; i++) {
     alien = &game->aliens[i];
+
+    /* It was generated if the current game state and the aliens updates differ
+     */
+    regenerated = alien->alive != alien_update_request->aliens[i].alive;
+    alien->alive = alien_update_request->aliens[i].alive;
+
     if (alien->alive) {
       alien->position.col = alien_update_request->aliens[i].position.col;
       alien->position.row = alien_update_request->aliens[i].position.row;
 
-      nc_add_alien(game_window, &alien->position);
+      nc_add_alien(game_window, &alien->position, regenerated);
     }
   }
 }
 
 /******************** Aliens management ********************/
 
-/* Spawns the process responsible for updating the aliens */
-void spawn_alien_update_fork(alien_t *aliens) {
+/* Threaded function responsible for updating the aliens */
+void *aliens_update_thread(void *void_args) {
 
-  int n = fork();
-  assert(n != -1);
+  aliens_update_thread_args_t *args = (aliens_update_thread_args_t *)void_args;
 
-  /* Only the child process goes in */
-  if (n == 0) {
-    void *zmq_context = zmq_get_context();
-    void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
-    MESSAGE_TYPE msg_type;
-    int status_code;
-    aliens_update_request_t aliens_update_request;
-    only_status_code_response_t *status_code_response;
+  aliens_update_t aliens_update;
+  /* Args unpack */
+  pthread_mutex_t *lock = args->lock;
+  game_t *game = args->game;
+  WINDOW *game_window = args->game_window;
+  void *pub_socket = args->pub_socket;
+  /* Aliens regeneration management */
+  int aliens_to_regenerate = 0;
+  int aliens_regenerated = 0;
+  int last_aliens_alive = game->aliens_alive;
+  uint64_t current_ts = get_timestamp_ms();
+  uint64_t last_aliens_change_ts = current_ts;
 
-    zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
+  while (game->aliens_alive) {
+    usleep(ALIEN_UPDATE * 1000);
+    current_ts = get_timestamp_ms();
+    aliens_to_regenerate = 0;
+    aliens_regenerated = 0;
 
-    /* Initial copy of the aliens to the request struct */
+    /* ========= Entering critical region ========= */
+    pthread_mutex_lock(lock);
+
+    /* Means some aliens were zapped */
+    if (last_aliens_alive > game->aliens_alive)
+      last_aliens_change_ts = current_ts;
+    /* Means that no aliens were zapped or regenerated in the last
+     * ALIEN_REGENERATION_DELAY interval*/
+    else if (current_ts - last_aliens_change_ts > ALIEN_REGENERATION_DELAY) {
+      aliens_to_regenerate =
+          (int)(ALIEN_REGENERATION_FACTOR * game->aliens_alive);
+      last_aliens_change_ts = current_ts;
+    }
+
+    last_aliens_alive = game->aliens_alive;
+
+    memcpy(&aliens_update.aliens, &game->aliens, sizeof(alien_t) * N_ALIENS);
+
+    /* Generate new positions for aliens */
     for (int i = 0; i < N_ALIENS; i++) {
-      aliens_update_request.aliens[i].alive = aliens[i].alive;
-      aliens_update_request.aliens[i].position.col = aliens[i].position.col;
-      aliens_update_request.aliens[i].position.row = aliens[i].position.row;
-    }
-
-    while (1) {
-      usleep(ALIEN_UPDATE * 1000);
-
-      /* Generate new positions for aliens */
-      for (int i = 0; i < N_ALIENS; i++) {
-        update_position(&aliens_update_request.aliens[i].position,
+      /* Update position */
+      if (aliens_update.aliens[i].alive)
+        update_position(&aliens_update.aliens[i].position,
                         (MOVEMENT_DIRECTION)(rand() % 4));
-      }
 
-      zmq_send_msg(req_socket, ALIENS_UPDATE_REQUEST, &aliens_update_request);
-
-      status_code_response =
-          (only_status_code_response_t *)zmq_receive_msg(req_socket, &msg_type);
-
-      status_code = status_code_response->status_code;
-      free(status_code_response);
-
-      if (status_code == 400) {
-        /* The main process will send a 400 code when this child process should
-         * stop generating positions */
-        exit(0);
+      /* Alien regeneration */
+      else if (aliens_to_regenerate > 0 &&
+               aliens_regenerated < aliens_to_regenerate) {
+        aliens_update.aliens[i].alive = true;
+        game->aliens_alive++;
+        update_position(&aliens_update.aliens[i].position,
+                        (MOVEMENT_DIRECTION)(rand() % 4));
+        aliens_regenerated++;
       }
     }
+
+    zmq_send_msg(pub_socket, ALIENS_UPDATE, &aliens_update);
+
+    /* Game should contain the old positions to clear the screen, while
+     * aliens_update contains the new ones */
+    handle_aliens_updates(game_window, &aliens_update, game);
+    wrefresh(game_window);
+
+    /* ========= Leaving critical region ========= */
+    pthread_mutex_unlock(lock);
   }
+
+  return NULL;
 }
 
 /* Places the alien on the board */

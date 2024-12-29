@@ -14,7 +14,8 @@ void nc_init() {
   /* Draw letters and lasers with color */
   start_color();
   init_pair(1, COLOR_RED, COLOR_BLACK);
-  init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(3, COLOR_GREEN, COLOR_BLACK);
 }
 
 /* Draws game rectangle */
@@ -59,7 +60,7 @@ void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
     alien_t *alien = &game.aliens[i];
 
     if (alien->alive)
-      nc_add_alien(game_window, &alien->position);
+      nc_add_alien(game_window, &alien->position, false);
   }
 
   /* Draw players */
@@ -184,9 +185,16 @@ void nc_draw_zap(WINDOW *win, game_t *game, player_t *player_zap) {
 };
 
 /* Adds a alien to the screen */
-void nc_add_alien(WINDOW *game_window, position_t *position) {
+void nc_add_alien(WINDOW *game_window, position_t *position, bool regenerated) {
+
+  if (regenerated)
+    wattron(game_window, COLOR_PAIR(3));
+
   wmove(game_window, POS_TO_WIN(position->row), POS_TO_WIN(position->col));
   waddch(game_window, '*' | A_BOLD);
+
+  if (regenerated)
+    wattroff(game_window, COLOR_PAIR(3));
 }
 
 /******************** Cleaning screen ********************/
