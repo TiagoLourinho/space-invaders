@@ -18,10 +18,10 @@
 void nc_init();
 
 /* Draws game rectangle */
-WINDOW *nc_init_space();
+WINDOW *nc_init_space(int starting_row);
 
 /* Draws score rectangle */
-WINDOW *nc_init_scoreboard();
+WINDOW *nc_init_scoreboard(int starting_row);
 
 /* Draws user commands */
 WINDOW *nc_init_astronaut(MOVEMENT_ORIENTATION player_orientation,

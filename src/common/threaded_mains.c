@@ -1,9 +1,12 @@
 /* Contains applications main functions that have the option to be ran in a
- * secondary thread */
+ * secondary thread, and receive threaded_mains_args_t to manage execution */
 
 #include "threaded_mains.h"
 
-int astronaut_client_main() {
+void *astronaut_client_main(void *void_args) {
+
+  /* Threaded args */
+  threaded_mains_args_t *args = (threaded_mains_args_t *)void_args;
   /* ZeroMQ/comms related */
   void *zmq_context = zmq_get_context();
   void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
@@ -45,8 +48,12 @@ int astronaut_client_main() {
   free(connect_response);
 
   /* Ncurses initialization */
+  if (args->threaded)
+    pthread_mutex_lock(args->ncurses_lock);
   nc_init();
   window = nc_init_astronaut(player_orientation, player_id);
+  if (args->threaded)
+    pthread_mutex_unlock(args->ncurses_lock);
 
   /* Define known parts of the requests already */
   action_request.id = player_id;
@@ -55,7 +62,7 @@ int astronaut_client_main() {
   disconnect_request.token = player_token;
 
   /* Game loop */
-  while (!stop_playing) {
+  while (!(stop_playing || (args->threaded && *args->terminate_threads))) {
     key_pressed = wgetch(window);
 
     switch (key_pressed) {
@@ -107,6 +114,8 @@ int astronaut_client_main() {
       /* Send disconnect message and stop playing */
       send_action_message = false;
       stop_playing = true;
+      if (args->threaded)
+        *args->terminate_threads = true;
       zmq_send_msg(req_socket, DISCONNECT_REQUEST, &disconnect_request);
       status_code_and_score_response =
           (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
@@ -136,18 +145,28 @@ int astronaut_client_main() {
     }
 
     /* Position cursor and print current score */
+    if (args->threaded)
+      pthread_mutex_lock(args->ncurses_lock);
     wmove(window, 9, 1);
     wprintw(window, "Current score: %d", player_score);
+    if (args->threaded)
+      pthread_mutex_unlock(args->ncurses_lock);
   }
 
   /* Resources cleanup */
   zmq_cleanup(zmq_context, req_socket, NULL);
+  if (args->threaded)
+    pthread_mutex_lock(args->ncurses_lock);
   nc_cleanup();
+  if (args->threaded)
+    pthread_mutex_unlock(args->ncurses_lock);
 
-  return 0;
+  return NULL;
 }
 
-int outer_space_display_main() {
+void *outer_space_display_main(void *void_args) {
+  /* Threaded args */
+  threaded_mains_args_t *args = (threaded_mains_args_t *)void_args;
   /* ZeroMQ/comms related */
   void *zmq_context = zmq_get_context();
   void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
@@ -178,14 +197,21 @@ int outer_space_display_main() {
   game = &display_connect_response->game;
 
   /* Ncurses initialization */
+  if (args->threaded)
+    pthread_mutex_lock(args->ncurses_lock);
   nc_init();
-  game_window = nc_init_space();
-  score_window = nc_init_scoreboard();
+  game_window = nc_init_space(args->threaded ? 11 : 0);
+  score_window = nc_init_scoreboard(args->threaded ? 11 : 0);
   nc_draw_init_game(game_window, score_window, *game);
+  if (args->threaded)
+    pthread_mutex_unlock(args->ncurses_lock);
 
   /* Game loop */
-  while (!game_ended) {
+  while (!(game_ended || (args->threaded && *args->terminate_threads))) {
     temp_pointer = zmq_receive_msg(sub_socket, &msg_type);
+
+    if (args->threaded)
+      pthread_mutex_lock(args->ncurses_lock);
 
     switch (msg_type) {
     case ASTRONAUT_CONNECT_REQUEST:
@@ -212,6 +238,8 @@ int outer_space_display_main() {
 
     case GAME_ENDED:
       game_ended = true;
+      if (args->threaded)
+        *args->terminate_threads = true;
       break;
 
     default:
@@ -225,14 +253,23 @@ int outer_space_display_main() {
     nc_update_scoreboard(score_window, game->players, game->aliens_alive);
     wrefresh(game_window);
     wrefresh(score_window);
+
+    if (args->threaded)
+      pthread_mutex_unlock(args->ncurses_lock);
   }
 
-  print_winning_player(game);
-
   /* Resources cleanup */
-  free(display_connect_response);
+  if (args->threaded)
+    pthread_mutex_lock(args->ncurses_lock);
+  /* It might have exited without the game ending (when running
+                  in threaded/joint mode and the user pressed Q) */
+  if (game_ended)
+    print_winning_player(game);
   nc_cleanup();
+  if (args->threaded)
+    pthread_mutex_unlock(args->ncurses_lock);
+  free(display_connect_response);
   zmq_cleanup(zmq_context, req_socket, sub_socket);
 
-  return 0;
+  return NULL;
 }

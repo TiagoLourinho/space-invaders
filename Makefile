@@ -11,10 +11,11 @@ COMMON_OBJS = $(patsubst src/common/%.c, ./bin/%.o, $(COMMON_SRCS))
 GAME_SERVER_SRCS = $(wildcard src/game-server/*.c)
 ASTRONAUT_CLIENT_SRCS = $(wildcard src/astronaut-client/*.c)
 OUTER_SPACE_DISPLAY_SRCS = $(wildcard src/outer-space-display/*.c)
+ASTRONAUT_DISPLAY_CLIENT_SRCS = $(wildcard src/astronaut-display-client/*.c)
 
 #################### Targets ####################
 
-all: teste directories game-server astronaut-client outer-space-display
+all: teste directories game-server astronaut-client outer-space-display astronaut-display-client
 
 
 teste:
@@ -24,6 +25,7 @@ teste:
 	@echo Game server sources: $(GAME_SERVER_SRCS)
 	@echo Astronaut client sources: $(ASTRONAUT_CLIENT_SRCS)
 	@echo Outer space display sources: $(OUTER_SPACE_DISPLAY_SRCS)
+	@echo Astronaut display client sources: $(ASTRONAUT_DISPLAY_CLIENT_SRCS)
 	@echo #################       #################
 
 
@@ -38,6 +40,8 @@ astronaut-client: $(COMMON_OBJS) $(ASTRONAUT_CLIENT_SRCS)
 	$(CC) $(CFLAGS) $(ASTRONAUT_CLIENT_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
 outer-space-display: $(COMMON_OBJS) $(OUTER_SPACE_DISPLAY_SRCS)
 	$(CC) $(CFLAGS) $(OUTER_SPACE_DISPLAY_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
+astronaut-display-client: $(COMMON_OBJS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS)
+	$(CC) $(CFLAGS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
 
 # Compile common source files into object files
 ./bin/%.o: src/common/%.c

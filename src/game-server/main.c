@@ -40,8 +40,8 @@ int main() {
 
   /* Ncurses initialization */
   nc_init();
-  game_window = nc_init_space();
-  score_window = nc_init_scoreboard();
+  game_window = nc_init_space(0);
+  score_window = nc_init_scoreboard(0);
 
   /* Initialize game and spawn helper child process to manage aliens updated */
   srand((unsigned int)time(NULL)); /* Used for the aliens positions */
@@ -49,15 +49,14 @@ int main() {
   nc_draw_init_game(game_window, score_window, game);
 
   /* Aliens update thread creation */
-  if (pthread_mutex_init(&lock, NULL) != 0)
-    exit(-1);
+  assert(pthread_mutex_init(&lock, NULL) == 0);
   thread_args.game = &game;
   thread_args.game_window = game_window;
   thread_args.score_window = score_window;
   thread_args.pub_socket = pub_socket;
   thread_args.lock = &lock;
-  if (pthread_create(&thread_id, NULL, aliens_update_thread, &thread_args) != 0)
-    exit(-1);
+  assert(pthread_create(&thread_id, NULL, aliens_update_thread, &thread_args) ==
+         0);
 
   /* Game loop */
   while (game.aliens_alive) {

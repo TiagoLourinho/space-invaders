@@ -19,13 +19,13 @@ void nc_init() {
 }
 
 /* Draws game rectangle */
-WINDOW *nc_init_space() {
+WINDOW *nc_init_space(int starting_row) {
 
   /*
     Creates a window and draws a border
     Adding +2 on each dimension for the border
   */
-  WINDOW *win = newwin(SPACE_SIZE + 2, SPACE_SIZE + 2, 0, 0);
+  WINDOW *win = newwin(SPACE_SIZE + 2, SPACE_SIZE + 2, starting_row, 0);
   assert(win != NULL);
 
   box(win, 0, 0);
@@ -35,9 +35,10 @@ WINDOW *nc_init_space() {
 }
 
 /* Draws score rectangle */
-WINDOW *nc_init_scoreboard() {
+WINDOW *nc_init_scoreboard(int starting_row) {
 
-  WINDOW *win = newwin(MAX_PLAYERS + 2 + 2 + 2, 16, 0, SPACE_SIZE + 5);
+  WINDOW *win =
+      newwin(MAX_PLAYERS + 2 + 2 + 2, 16, starting_row, SPACE_SIZE + 4);
   assert(win != NULL);
 
   box(win, 0, 0);
