@@ -85,7 +85,7 @@ int main() {
       free(temp_pointer);
 
     /* Update scoreboard and refresh game windows */
-    nc_update_scoreboard(score_window, game->players);
+    nc_update_scoreboard(score_window, game->players, game->aliens_alive);
     wrefresh(game_window);
     wrefresh(score_window);
   }

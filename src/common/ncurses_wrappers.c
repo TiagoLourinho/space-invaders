@@ -37,7 +37,7 @@ WINDOW *nc_init_space() {
 /* Draws score rectangle */
 WINDOW *nc_init_scoreboard() {
 
-  WINDOW *win = newwin(MAX_PLAYERS + 4, 16, 0, SPACE_SIZE + 5);
+  WINDOW *win = newwin(MAX_PLAYERS + 2 + 2 + 2, 16, 0, SPACE_SIZE + 5);
   assert(win != NULL);
 
   box(win, 0, 0);
@@ -46,6 +46,11 @@ WINDOW *nc_init_scoreboard() {
   wprintw(win, "  SCOREBOARD  ");
   wmove(win, 2, 1);
   wprintw(win, "--------------");
+
+  wmove(win, 11, 1);
+  wprintw(win, "--------------");
+  wmove(win, 12, 1);
+  wprintw(win, "* ALIVE  - %d", N_ALIENS);
 
   wrefresh(win);
 
@@ -71,7 +76,7 @@ void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
       nc_add_player(game_window, *player);
   }
 
-  nc_update_scoreboard(score_window, game.players);
+  nc_update_scoreboard(score_window, game.players, game.aliens_alive);
 
   wrefresh(game_window);
   wrefresh(score_window);
@@ -98,7 +103,7 @@ int __compare_players(const void *a, const void *b) {
 }
 
 /* Resets and updates the scoreboard */
-void nc_update_scoreboard(WINDOW *win, player_t *players) {
+void nc_update_scoreboard(WINDOW *win, player_t *players, int aliens_alive) {
 
   player_t copy_players[MAX_PLAYERS];
 
@@ -124,6 +129,10 @@ void nc_update_scoreboard(WINDOW *win, player_t *players) {
               copy_players[i].score);
     }
   }
+
+  /* Update alive aliens */
+  wmove(win, 12, 1);
+  wprintw(win, "* ALIVE  - %3d", aliens_alive);
 }
 
 /* Adds a player to the screen */

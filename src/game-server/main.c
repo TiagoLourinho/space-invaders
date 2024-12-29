@@ -53,6 +53,7 @@ int main() {
     exit(-1);
   thread_args.game = &game;
   thread_args.game_window = game_window;
+  thread_args.score_window = score_window;
   thread_args.pub_socket = pub_socket;
   thread_args.lock = &lock;
   if (pthread_create(&thread_id, NULL, aliens_update_thread, &thread_args) != 0)
@@ -65,7 +66,7 @@ int main() {
     /*
     ========= Entering critical region =========
 
-    The thread of the aliens update uses the game state, game window and publish
+    The thread of the aliens update uses the game state, windows and publish
     socket, so the requests can't be handled without using those resources
     */
     pthread_mutex_lock(&lock);
@@ -145,7 +146,7 @@ int main() {
       free(temp_pointer);
 
     /* Update scoreboard and refresh game windows */
-    nc_update_scoreboard(score_window, game.players);
+    nc_update_scoreboard(score_window, game.players, game.aliens_alive);
     wrefresh(game_window);
     wrefresh(score_window);
 
@@ -156,10 +157,10 @@ int main() {
   /* Publish final update because game ended */
   zmq_send_msg(pub_socket, GAME_ENDED, NULL);
 
+  pthread_join(thread_id, NULL);
   print_winning_player(&game);
 
   /* Resources cleanup */
-  pthread_join(thread_id, NULL);
   pthread_mutex_destroy(&lock);
   nc_cleanup();
   zmq_cleanup(zmq_context, rep_socket, pub_socket);

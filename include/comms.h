@@ -125,6 +125,7 @@ typedef struct {
 typedef struct {
   game_t *game;
   WINDOW *game_window;
+  WINDOW *score_window;
   void *pub_socket;
   pthread_mutex_t *lock;
 } aliens_update_thread_args_t;

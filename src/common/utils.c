@@ -58,6 +58,7 @@ void handle_aliens_updates(WINDOW *game_window,
                            game_t *game) {
   alien_t *alien;
   bool regenerated;
+  int aliens_alive = 0;
 
   /*
     Two loops to clean the old positions of the aliens and then put the
@@ -78,12 +79,15 @@ void handle_aliens_updates(WINDOW *game_window,
     alien->alive = alien_update_request->aliens[i].alive;
 
     if (alien->alive) {
+      aliens_alive++;
       alien->position.col = alien_update_request->aliens[i].position.col;
       alien->position.row = alien_update_request->aliens[i].position.row;
 
       nc_add_alien(game_window, &alien->position, regenerated);
     }
   }
+
+  game->aliens_alive = aliens_alive;
 }
 
 /******************** Aliens management ********************/
@@ -98,6 +102,7 @@ void *aliens_update_thread(void *void_args) {
   pthread_mutex_t *lock = args->lock;
   game_t *game = args->game;
   WINDOW *game_window = args->game_window;
+  WINDOW *score_window = args->score_window;
   void *pub_socket = args->pub_socket;
   /* Aliens regeneration management */
   int aliens_to_regenerate = 0;
@@ -142,8 +147,6 @@ void *aliens_update_thread(void *void_args) {
                aliens_regenerated < aliens_to_regenerate) {
         aliens_update.aliens[i].alive = true;
         game->aliens_alive++;
-        update_position(&aliens_update.aliens[i].position,
-                        (MOVEMENT_DIRECTION)(rand() % 4));
         aliens_regenerated++;
       }
     }
@@ -153,7 +156,10 @@ void *aliens_update_thread(void *void_args) {
     /* Game should contain the old positions to clear the screen, while
      * aliens_update contains the new ones */
     handle_aliens_updates(game_window, &aliens_update, game);
+
+    nc_update_scoreboard(score_window, game->players, game->aliens_alive);
     wrefresh(game_window);
+    wrefresh(score_window);
 
     /* ========= Leaving critical region ========= */
     pthread_mutex_unlock(lock);

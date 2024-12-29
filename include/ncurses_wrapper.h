@@ -32,7 +32,7 @@ void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game);
 int __compare_players(const void *a, const void *b);
 
 /* Resets and updates the scoreboard */
-void nc_update_scoreboard(WINDOW *win, player_t *players);
+void nc_update_scoreboard(WINDOW *win, player_t *players, int aliens_alive);
 
 /* Adds a player to the screen */
 void nc_add_player(WINDOW *win, player_t player);
