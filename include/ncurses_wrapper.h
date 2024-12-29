@@ -23,6 +23,10 @@ WINDOW *nc_init_space();
 /* Draws score rectangle */
 WINDOW *nc_init_scoreboard();
 
+/* Draws user commands */
+WINDOW *nc_init_astronaut(MOVEMENT_ORIENTATION player_orientation,
+                          int player_id);
+
 /* Draws the elements necessary for a given game when initializing */
 void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game);
 

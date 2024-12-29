@@ -57,6 +57,41 @@ WINDOW *nc_init_scoreboard() {
   return win;
 }
 
+/* Draws user commands */
+WINDOW *nc_init_astronaut(MOVEMENT_ORIENTATION player_orientation,
+                          int player_id) {
+
+  WINDOW *win = newwin(11, 40, 0, 0);
+  assert(win != NULL);
+
+  box(win, 0, 0);
+
+  /* Print game instructions */
+  wmove(win, 1, 1);
+  wprintw(win, "You are playing as player: %c", id_to_symbol(player_id));
+  wmove(win, 3, 1);
+  wprintw(win, "Controls:");
+  wmove(win, 4, 1);
+  if (player_orientation == VERTICAL) {
+    wprintw(win, "\t UP ARROW\t-> Move up");
+    wmove(win, 5, 1);
+    wprintw(win, "\t DOWN ARROW\t-> Move down");
+
+  } else {
+    wprintw(win, "\t RIGHT ARROW\t-> Move right");
+    wmove(win, 5, 1);
+    wprintw(win, "\t LEFT ARROW\t-> Move left");
+  }
+  wmove(win, 6, 1);
+  wprintw(win, "\t SPACEBAR\t-> Zap");
+  wmove(win, 7, 1);
+  wprintw(win, "\t q/Q\t\t-> Stop playing");
+
+  wrefresh(win);
+
+  return win;
+}
+
 /* Draws the elements necessary for a given game when initializing */
 void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game) {
 

@@ -13,6 +13,8 @@ int main() {
   void *req_socket = zmq_create_socket(zmq_context, ZMQ_REQ);
   MESSAGE_TYPE msg_type;
   bool send_action_message = false;
+  /* Ncurses */
+  WINDOW *window;
   /* Structs to receive and send the requests */
   astronaut_connect_response_t *connect_response;
   action_request_t action_request;
@@ -48,6 +50,7 @@ int main() {
 
   /* Ncurses initialization */
   nc_init();
+  window = nc_init_astronaut(player_orientation, player_id);
 
   /* Define known parts of the requests already */
   action_request.id = player_id;
@@ -55,25 +58,13 @@ int main() {
   disconnect_request.id = player_id;
   disconnect_request.token = player_token;
 
-  /* Print game instructions */
-  printw("You are playing as player: %c\n\n", id_to_symbol(player_id));
-  printw("Controls:\n");
-  if (player_orientation == VERTICAL) {
-    printw("\t UP ARROW\t-> Move up\n");
-    printw("\t DOWN ARROW\t-> Move down\n");
-  } else {
-    printw("\t RIGHT ARROW\t-> Move right\n");
-    printw("\t LEFT ARROW\t-> Move left\n");
-  }
-  printw("\t SPACEBAR\t-> Zap\n");
-  printw("\t q/Q\t\t-> Stop playing\n\n");
-
   /* Game loop */
   while (!stop_playing) {
-    key_pressed = getch();
+    key_pressed = wgetch(window);
 
     switch (key_pressed) {
-    case KEY_UP:
+    case 65: // KEY_UP
+
       if (player_orientation == HORIZONTAL) /* Player can't move vertically */
         break;
       send_action_message = true;
@@ -81,7 +72,8 @@ int main() {
       action_request.movement_direction = UP;
       break;
 
-    case KEY_DOWN:
+    case 66: // KEY_DOWN
+
       if (player_orientation == HORIZONTAL) /* Player can't move vertically */
         break;
       send_action_message = true;
@@ -89,7 +81,8 @@ int main() {
       action_request.movement_direction = DOWN;
       break;
 
-    case KEY_LEFT:
+    case 68: // KEY_LEFT
+
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
       send_action_message = true;
@@ -97,7 +90,8 @@ int main() {
       action_request.movement_direction = LEFT;
       break;
 
-    case KEY_RIGHT:
+    case 67: // KEY_RIGHT
+
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
       send_action_message = true;
@@ -146,8 +140,8 @@ int main() {
     }
 
     /* Position cursor and print current score */
-    move(8, 0);
-    printw("Current score: %d\n", player_score);
+    wmove(window, 9, 1);
+    wprintw(window, "Current score: %d", player_score);
   }
 
   /* Resources cleanup */
