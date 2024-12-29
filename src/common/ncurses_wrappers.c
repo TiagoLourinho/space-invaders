@@ -10,6 +10,7 @@ void nc_init() {
   cbreak();
   keypad(stdscr, TRUE);
   noecho();
+  curs_set(0); // Hide the cursor
 
   /* Draw letters and lasers with color */
   start_color();
