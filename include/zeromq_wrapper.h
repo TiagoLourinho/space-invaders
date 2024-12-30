@@ -2,6 +2,7 @@
 #define ZEROMQ_WRAPPER_H
 
 #include "comms.h"
+#include "scores.pb-c.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -23,7 +24,7 @@ void zmq_bind_socket(void *socket, char *address);
 void zmq_connect_socket(void *socket, char *address);
 
 /* Subscribe to publisher */
-void zmq_subscribe(void *socket, char *topic);
+void zmq_subscribe(void *socket, PUBSUB_TOPICS topic);
 
 /******************** Sending and receiving messages ********************/
 
@@ -31,11 +32,22 @@ void zmq_subscribe(void *socket, char *topic);
 Receive messages (first the type then the actual message)
 
 Dynamically allocates memory for the message received. Don't forget to free.
-*/
-void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type);
 
-/* Send messages (first the type then the actual message)*/
-void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg);
+If topic==NOTOPIC then no topic is expected
+*/
+void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type,
+                      PUBSUB_TOPICS topic);
+
+/* Send messages, first the type then the actual message.
+
+  If msg_size==-1, then it uses the get_msg_size function to get the size
+  If topic==NOTOPIC then no topic is sent at the beggining
+*/
+void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg, int msg_size,
+                  PUBSUB_TOPICS topic);
+
+/* Broadcasts the scores updates messages using protobuf protocol */
+void zmq_broadcast_scores_updates(void *pub_socket, game_t *game);
 
 /******************** Cleanup ********************/
 

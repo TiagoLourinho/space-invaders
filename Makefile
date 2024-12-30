@@ -9,6 +9,7 @@ PROTO_SRC_DIR = src/proto
 PROTO_SRC_FILES = $(PROTO_SRC_DIR)/scores.proto
 PROTO_C_FILES = $(PROTO_SRC_DIR)/scores.pb-c.c
 PROTO_H_FILES = $(PROTO_SRC_DIR)/scores.pb-c.h
+PROTO_OBJ_FILES = ./bin/scores.pb-c.o
 
 # Collect all ".c" files inside common and generate the corresponding ".o" in bin
 COMMON_SRCS = $(wildcard src/common/*.c)
@@ -41,23 +42,26 @@ directories:
 	mkdir -p bin run
 
 # Generate proto files
-proto_files: $(PROTO_C_FILES) $(PROTO_H_FILES)
+proto_files: $(PROTO_OBJ_FILES)
+
+$(PROTO_OBJ_FILES): $(PROTO_C_FILES) $(PROTO_H_FILES)
+	$(CC) $(CFLAGS) -c $(PROTO_C_FILES) -o $@
 
 $(PROTO_C_FILES) $(PROTO_H_FILES): $(PROTO_SRC_FILES)
 	$(PROTOC) --proto_path=$(PROTO_SRC_DIR) --c_out=$(PROTO_SRC_DIR) --python_out=$(PROTO_SRC_DIR) $<
 
 # Each program depends on all the common objects created and all the source files in the respective folder
-game-server: $(COMMON_OBJS) $(GAME_SERVER_SRCS) $(PROTO_C_FILES) $(PROTO_H_FILES)
-	$(CC) $(CFLAGS) $(GAME_SERVER_SRCS) $(COMMON_OBJS) $(PROTO_C_FILES) -o run/$@ $(LDFLAGS)
-astronaut-client: $(COMMON_OBJS) $(ASTRONAUT_CLIENT_SRCS)
-	$(CC) $(CFLAGS) $(ASTRONAUT_CLIENT_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
-outer-space-display: $(COMMON_OBJS) $(OUTER_SPACE_DISPLAY_SRCS)
-	$(CC) $(CFLAGS) $(OUTER_SPACE_DISPLAY_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
-astronaut-display-client: $(COMMON_OBJS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS)
-	$(CC) $(CFLAGS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS) $(COMMON_OBJS) -o run/$@ $(LDFLAGS)
+game-server: $(COMMON_OBJS) $(GAME_SERVER_SRCS) $(PROTO_OBJ_FILES)
+	$(CC) $(CFLAGS) $(GAME_SERVER_SRCS) $(COMMON_OBJS) $(PROTO_OBJ_FILES) -o run/$@ $(LDFLAGS)
+astronaut-client: $(COMMON_OBJS) $(ASTRONAUT_CLIENT_SRCS) $(PROTO_OBJ_FILES)
+	$(CC) $(CFLAGS) $(ASTRONAUT_CLIENT_SRCS) $(COMMON_OBJS) $(PROTO_OBJ_FILES) -o run/$@ $(LDFLAGS)
+outer-space-display: $(COMMON_OBJS) $(OUTER_SPACE_DISPLAY_SRCS) $(PROTO_OBJ_FILES)
+	$(CC) $(CFLAGS) $(OUTER_SPACE_DISPLAY_SRCS) $(COMMON_OBJS) $(PROTO_OBJ_FILES) -o run/$@ $(LDFLAGS)
+astronaut-display-client: $(COMMON_OBJS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS) $(PROTO_OBJ_FILES)
+	$(CC) $(CFLAGS) $(ASTRONAUT_DISPLAY_CLIENT_SRCS) $(COMMON_OBJS) $(PROTO_OBJ_FILES) -o run/$@ $(LDFLAGS)
 
 # Compile common source files into object files
-./bin/%.o: src/common/%.c
+./bin/%.o: src/common/%.c 
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

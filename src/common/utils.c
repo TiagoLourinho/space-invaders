@@ -151,7 +151,8 @@ void *aliens_update_thread(void *void_args) {
       }
     }
 
-    zmq_send_msg(pub_socket, ALIENS_UPDATE, &aliens_update);
+    zmq_send_msg(pub_socket, ALIENS_UPDATE, &aliens_update, -1,
+                 GAME_UPDATES_TOPIC);
 
     /* Game should contain the old positions to clear the screen, while
      * aliens_update contains the new ones */

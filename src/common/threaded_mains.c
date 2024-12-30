@@ -32,9 +32,9 @@ void *astronaut_client_main(void *void_args) {
   zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
 
   /* Connect to server to get player info */
-  zmq_send_msg(req_socket, ASTRONAUT_CONNECT_REQUEST, NULL);
-  connect_response =
-      (astronaut_connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
+  zmq_send_msg(req_socket, ASTRONAUT_CONNECT_REQUEST, NULL, -1, NO_TOPIC);
+  connect_response = (astronaut_connect_response_t *)zmq_receive_msg(
+      req_socket, &msg_type, NO_TOPIC);
 
   if (connect_response->status_code != 200) {
     printf("Game is full (%d players currently playing).\n", MAX_PLAYERS);
@@ -117,10 +117,11 @@ void *astronaut_client_main(void *void_args) {
       stop_playing = true;
       if (args->threaded)
         *args->terminate_threads = true;
-      zmq_send_msg(req_socket, DISCONNECT_REQUEST, &disconnect_request);
+      zmq_send_msg(req_socket, DISCONNECT_REQUEST, &disconnect_request, -1,
+                   NO_TOPIC);
       status_code_and_score_response =
-          (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
-                                                              &msg_type);
+          (status_code_and_score_response_t *)zmq_receive_msg(
+              req_socket, &msg_type, NO_TOPIC);
       assert(status_code_and_score_response->status_code == 200);
       player_score = status_code_and_score_response->player_score;
       free(status_code_and_score_response);
@@ -134,11 +135,11 @@ void *astronaut_client_main(void *void_args) {
 
     /* Only send the message if a valid action key was pressed */
     if (send_action_message) {
-      zmq_send_msg(req_socket, ACTION_REQUEST, &action_request);
+      zmq_send_msg(req_socket, ACTION_REQUEST, &action_request, -1, NO_TOPIC);
 
       status_code_and_score_response =
-          (status_code_and_score_response_t *)zmq_receive_msg(req_socket,
-                                                              &msg_type);
+          (status_code_and_score_response_t *)zmq_receive_msg(
+              req_socket, &msg_type, NO_TOPIC);
       player_score = status_code_and_score_response->player_score;
       free(status_code_and_score_response);
 
@@ -188,12 +189,12 @@ void *outer_space_display_main(void *void_args) {
   /* ZeroMQ initialization */
   zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
   zmq_connect_socket(sub_socket, SERVER_ZMQ_PUBSUB_ADDRESS);
-  zmq_subscribe(sub_socket, ""); /* Receive all broadcasted messages */
+  zmq_subscribe(sub_socket, GAME_UPDATES_TOPIC);
 
   /* Connect to server to get current game state */
-  zmq_send_msg(req_socket, DISPLAY_CONNECT_REQUEST, NULL);
-  display_connect_response =
-      (display_connect_response_t *)zmq_receive_msg(req_socket, &msg_type);
+  zmq_send_msg(req_socket, DISPLAY_CONNECT_REQUEST, NULL, -1, NO_TOPIC);
+  display_connect_response = (display_connect_response_t *)zmq_receive_msg(
+      req_socket, &msg_type, NO_TOPIC);
   assert(display_connect_response->status_code == 200);
   game = &display_connect_response->game;
 
@@ -209,7 +210,7 @@ void *outer_space_display_main(void *void_args) {
 
   /* Game loop */
   while (!(game_ended || (args->threaded && *args->terminate_threads))) {
-    temp_pointer = zmq_receive_msg(sub_socket, &msg_type);
+    temp_pointer = zmq_receive_msg(sub_socket, &msg_type, GAME_UPDATES_TOPIC);
 
     if (args->threaded)
       pthread_mutex_lock(args->ncurses_lock);
@@ -244,7 +245,11 @@ void *outer_space_display_main(void *void_args) {
       break;
 
     default:
-      break;
+      if (temp_pointer != NULL)
+        free(temp_pointer);
+      if (args->threaded)
+        pthread_mutex_unlock(args->ncurses_lock);
+      continue;
     }
 
     if (temp_pointer != NULL)

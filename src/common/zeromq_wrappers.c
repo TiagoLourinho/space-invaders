@@ -37,8 +37,9 @@ void zmq_connect_socket(void *socket, char *address) {
 }
 
 /* Subscribe to publisher */
-void zmq_subscribe(void *socket, char *topic) {
-  int rc = zmq_setsockopt(socket, ZMQ_SUBSCRIBE, topic, strlen(topic));
+void zmq_subscribe(void *socket, PUBSUB_TOPICS topic) {
+  int rc = zmq_setsockopt(socket, ZMQ_SUBSCRIBE, (void *)&topic,
+                          sizeof(PUBSUB_TOPICS));
   assert(rc == 0);
 }
 
@@ -48,11 +49,21 @@ void zmq_subscribe(void *socket, char *topic) {
 Receive messages (first the type then the actual message)
 
 Dynamically allocates memory for the message received. Don't forget to free.
+
+If topic==NOTOPIC then no topic is expected
 */
-void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type) {
+void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type,
+                      PUBSUB_TOPICS topic) {
   int n;
   void *msg;
   size_t followup_msg_size;
+  PUBSUB_TOPICS temp;
+
+  /* Receive the topic and discard it as it isn't needed */
+  if (topic != NO_TOPIC) {
+    n = zmq_recv(socket, &temp, sizeof(PUBSUB_TOPICS), 0);
+    assert(n != -1);
+  }
 
   /* Receive message type/header */
   n = zmq_recv(socket, msg_type, sizeof(MESSAGE_TYPE), 0);
@@ -73,10 +84,22 @@ void *zmq_receive_msg(void *socket, MESSAGE_TYPE *msg_type) {
     return NULL;
 }
 
-/* Send messages (first the type then the actual message)*/
-void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg) {
+/* Send messages, first the type then the actual message.
+
+  If msg_size==-1, then it uses the get_msg_size function to get the size
+  If topic==NOTOPIC then no topic is sent at the beggining
+*/
+void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg, int msg_size,
+                  PUBSUB_TOPICS topic) {
   int n;
-  size_t followup_msg_size = get_msg_size(msg_type);
+  size_t followup_msg_size =
+      (msg_size != -1) ? (size_t)msg_size : get_msg_size(msg_type);
+
+  /* Send topic if needed */
+  if (topic != NO_TOPIC) {
+    n = zmq_send(socket, &topic, sizeof(PUBSUB_TOPICS), ZMQ_SNDMORE);
+    assert(n != -1);
+  }
 
   /* Send message type/header */
   n = zmq_send(socket, &msg_type, sizeof(MESSAGE_TYPE),
@@ -89,6 +112,34 @@ void zmq_send_msg(void *socket, MESSAGE_TYPE msg_type, void *msg) {
     assert(n != -1);
   }
 }
+
+/* Broadcasts the scores updates messages using protobuf protocol */
+void zmq_broadcast_scores_updates(void *pub_socket, game_t *game) {
+  ScoresMessage scores_message = SCORES_MESSAGE__INIT;
+  int scores[MAX_PLAYERS];
+  size_t packed_size;
+  uint8_t *buffer;
+
+  /* Build scores array (-1 for not connected players) */
+  for (int i = 0; i < MAX_PLAYERS; i++) {
+    scores[i] = game->players[i].connected ? game->players[i].score : -1;
+  }
+
+  /* Define protobuf message */
+  scores_message.n_scores = MAX_PLAYERS;
+  scores_message.scores = scores;
+
+  /* Pack message */
+  packed_size = scores_message__get_packed_size(&scores_message);
+  buffer = (uint8_t *)malloc(packed_size);
+  assert(buffer != NULL);
+  scores_message__pack(&scores_message, buffer);
+
+  /* Send and free */
+  zmq_send_msg(pub_socket, SCORES_UPDATE, buffer, packed_size,
+               SCORES_UPDATES_TOPIC);
+  free(buffer);
+};
 
 /******************** Cleanup ********************/
 
@@ -114,6 +165,11 @@ void zmq_cleanup(void *context, void *socket1, void *socket2) {
 
 /* Returns the size of the followup message given the type */
 size_t get_msg_size(MESSAGE_TYPE type) {
+
+  /* Scores update uses protobuf and as such the message size is variable and
+   * should be sent manually in the other function */
+  assert(type != SCORES_UPDATE);
+
   switch (type) {
   case DISPLAY_CONNECT_REQUEST:
     /* Connect request doens't have a followup message with more info */

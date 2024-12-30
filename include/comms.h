@@ -61,7 +61,18 @@ typedef enum {
   GAME_ENDED,
   /* Used to broadcast the aliens status and positions */
   ALIENS_UPDATE,
+  /* Used to broadcast the scores updates using protobuf  */
+  SCORES_UPDATE
 } MESSAGE_TYPE;
+
+typedef enum {
+  /* Don't send a topic */
+  NO_TOPIC,
+  /* Contains all game related updates such as connect, disconnect, zap, etc */
+  GAME_UPDATES_TOPIC,
+  /* Contains only the scores updates using protobuf protocol */
+  SCORES_UPDATES_TOPIC
+} PUBSUB_TOPICS;
 
 /******************** Requests structs ********************/
 

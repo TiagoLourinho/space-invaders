@@ -29,6 +29,10 @@ int main() {
   WINDOW *game_window, *score_window;
   /* Game state and authentication management */
   game_t game;
+  int previous_aliens_alive =
+      N_ALIENS; /* Used to broadcast scores updates when an alien is killed */
+  bool players_changed =
+      false; /* Used to broadcast scores updates when a user joined/left */
   int tokens[MAX_PLAYERS]; /* The authentication tokens used by the players */
   /* Aliens update thread */
   pthread_t thread_id;
@@ -61,7 +65,7 @@ int main() {
 
   /* Game loop */
   while (game.aliens_alive) {
-    temp_pointer = zmq_receive_msg(rep_socket, &msg_type);
+    temp_pointer = zmq_receive_msg(rep_socket, &msg_type, NO_TOPIC);
 
     /*
     ========= Entering critical region =========
@@ -76,22 +80,24 @@ int main() {
       display_connect_response.status_code = 200;
       copy_game_state_for_display(&display_connect_response, &game);
       zmq_send_msg(rep_socket, DISPLAY_CONNECT_RESPONSE,
-                   &display_connect_response);
+                   &display_connect_response, -1, NO_TOPIC);
       break;
 
     case ASTRONAUT_CONNECT_REQUEST: /* Received by the astronaut clients */
       astronaut_connect_response.status_code = validate_connect_request(game);
 
       if (astronaut_connect_response.status_code == 200) {
+        players_changed = true;
         /* Publish update */
-        zmq_send_msg(pub_socket, ASTRONAUT_CONNECT_REQUEST, NULL);
+        zmq_send_msg(pub_socket, ASTRONAUT_CONNECT_REQUEST, NULL, -1,
+                     GAME_UPDATES_TOPIC);
 
         handle_player_connect(game_window, &astronaut_connect_response, tokens,
                               &game);
       }
 
       zmq_send_msg(rep_socket, ASTROUNAUT_CONNECT_RESPONSE,
-                   &astronaut_connect_response);
+                   &astronaut_connect_response, -1, NO_TOPIC);
       break;
 
     case ACTION_REQUEST: /* Received by the astronaut clients */
@@ -103,7 +109,8 @@ int main() {
       if (status_code_and_score_response.status_code == 200) {
         /* Publish update */
         action_request->token = -1; /* Invalidate token */
-        zmq_send_msg(pub_socket, ACTION_REQUEST, action_request);
+        zmq_send_msg(pub_socket, ACTION_REQUEST, action_request, -1,
+                     GAME_UPDATES_TOPIC);
 
         handle_player_action(action_request, &game.players[action_request->id],
                              game_window, &game);
@@ -112,8 +119,8 @@ int main() {
             game.players[action_request->id].score;
       }
 
-      zmq_send_msg(rep_socket, ACTION_RESPONSE,
-                   &status_code_and_score_response);
+      zmq_send_msg(rep_socket, ACTION_RESPONSE, &status_code_and_score_response,
+                   -1, NO_TOPIC);
       break;
 
     case DISCONNECT_REQUEST: /* Received by the astronaut clients */
@@ -123,9 +130,11 @@ int main() {
           validate_disconnect_request(*disconnect_request, game, tokens);
 
       if (status_code_and_score_response.status_code == 200) {
+        players_changed = true;
         /* Publish update */
         disconnect_request->token = -1; /* Invalidate token */
-        zmq_send_msg(pub_socket, DISCONNECT_REQUEST, disconnect_request);
+        zmq_send_msg(pub_socket, DISCONNECT_REQUEST, disconnect_request, -1,
+                     GAME_UPDATES_TOPIC);
 
         handle_player_disconnect(game_window,
                                  &game.players[disconnect_request->id]);
@@ -135,12 +144,26 @@ int main() {
       }
 
       zmq_send_msg(rep_socket, DISCONNECT_RESPONSE,
-                   &status_code_and_score_response);
+                   &status_code_and_score_response, -1, NO_TOPIC);
       break;
 
     default:
+      previous_aliens_alive = game.aliens_alive;
+      players_changed = false;
+      if (temp_pointer != NULL)
+        free(temp_pointer);
+      /* ========= Leaving critical region ========= */
+      pthread_mutex_unlock(&lock);
       continue;
     }
+
+    /* If some aliens were killed or somebody connected/disconnected, broadcast
+     * scores updates */
+    if (previous_aliens_alive > game.aliens_alive || players_changed)
+      zmq_broadcast_scores_updates(pub_socket, &game);
+
+    previous_aliens_alive = game.aliens_alive;
+    players_changed = false;
 
     if (temp_pointer != NULL)
       free(temp_pointer);
@@ -155,7 +178,7 @@ int main() {
   }
 
   /* Publish final update because game ended */
-  zmq_send_msg(pub_socket, GAME_ENDED, NULL);
+  zmq_send_msg(pub_socket, GAME_ENDED, NULL, -1, GAME_UPDATES_TOPIC);
 
   pthread_join(thread_id, NULL);
   print_winning_player(&game);
