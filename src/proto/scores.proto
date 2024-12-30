@@ -1,0 +1,5 @@
+syntax = "proto2";
+
+message ScoresMessage {
+  repeated int32 scores = 1; // Array of the player scores, it has -1 when the corresponding player isn't playing
+}

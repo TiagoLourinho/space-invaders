@@ -1,6 +1,7 @@
 #include "comms.h"
 #include "game_def.h"
 #include "ncurses_wrapper.h"
+#include "scores.pb-c.h"
 #include "utils.h"
 #include "validators.h"
 #include "zeromq_wrapper.h"
