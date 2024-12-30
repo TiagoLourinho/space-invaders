@@ -11,9 +11,15 @@ int main() {
   args.ncurses_lock = &ncurses_lock;
   args.terminate_threads = &terminate_threads;
 
-  assert(pthread_create(&astronaut_client, NULL, astronaut_client_main,
-                        &args) == 0);
   assert(pthread_create(&outer_space_display, NULL, outer_space_display_main,
+                        &args) == 0);
+
+  /* The astronaut client should only start after the outer space display
+   * is initialized, however, as active wait cant be used (to wait for a flag
+   * for example) sleep a bit to allow it to finish */
+  usleep(250000); // 0.25 s
+
+  assert(pthread_create(&astronaut_client, NULL, astronaut_client_main,
                         &args) == 0);
 
   pthread_join(astronaut_client, NULL);

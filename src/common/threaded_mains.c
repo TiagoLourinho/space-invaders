@@ -51,7 +51,8 @@ void *astronaut_client_main(void *void_args) {
   if (args->threaded)
     pthread_mutex_lock(args->ncurses_lock);
   nc_init();
-  window = nc_init_astronaut(player_orientation, player_id);
+  window =
+      nc_init_astronaut(player_orientation, player_id, args->threaded ? 22 : 0);
   if (args->threaded)
     pthread_mutex_unlock(args->ncurses_lock);
 
@@ -200,8 +201,8 @@ void *outer_space_display_main(void *void_args) {
   if (args->threaded)
     pthread_mutex_lock(args->ncurses_lock);
   nc_init();
-  game_window = nc_init_space(args->threaded ? 11 : 0);
-  score_window = nc_init_scoreboard(args->threaded ? 11 : 0);
+  game_window = nc_init_space();
+  score_window = nc_init_scoreboard();
   nc_draw_init_game(game_window, score_window, *game);
   if (args->threaded)
     pthread_mutex_unlock(args->ncurses_lock);

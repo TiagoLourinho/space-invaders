@@ -40,8 +40,8 @@ int main() {
 
   /* Ncurses initialization */
   nc_init();
-  game_window = nc_init_space(0);
-  score_window = nc_init_scoreboard(0);
+  game_window = nc_init_space();
+  score_window = nc_init_scoreboard();
 
   /* Initialize game and spawn helper child process to manage aliens updated */
   srand((unsigned int)time(NULL)); /* Used for the aliens positions */

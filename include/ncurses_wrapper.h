@@ -18,14 +18,14 @@
 void nc_init();
 
 /* Draws game rectangle */
-WINDOW *nc_init_space(int starting_row);
+WINDOW *nc_init_space();
 
 /* Draws score rectangle */
-WINDOW *nc_init_scoreboard(int starting_row);
+WINDOW *nc_init_scoreboard();
 
 /* Draws user commands */
 WINDOW *nc_init_astronaut(MOVEMENT_ORIENTATION player_orientation,
-                          int player_id);
+                          int player_id, int starting_row);
 
 /* Draws the elements necessary for a given game when initializing */
 void nc_draw_init_game(WINDOW *game_window, WINDOW *score_window, game_t game);
