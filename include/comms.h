@@ -45,24 +45,23 @@
 
 */
 typedef enum {
-  /* Only sends the header as no extra info is needed */
-  DISPLAY_CONNECT_REQUEST,
-  DISPLAY_CONNECT_RESPONSE,
-  /* Only sends the header as no extra info is needed */
-  ASTRONAUT_CONNECT_REQUEST,
-  ASTROUNAUT_CONNECT_RESPONSE,
-  ACTION_REQUEST,
-  /* Only contains the status code and score */
-  ACTION_RESPONSE,
-  DISCONNECT_REQUEST,
-  /* Only contains the status code and score */
-  DISCONNECT_RESPONSE,
-  /* Used to broadcast that the game has ended */
-  GAME_ENDED,
-  /* Used to broadcast the aliens status and positions */
-  ALIENS_UPDATE,
-  /* Used to broadcast the scores updates using protobuf  */
-  SCORES_UPDATE
+  /*
+    REQREP messages
+    (the requests are still broadcasted after being validated to update the
+    displays)
+  */
+  DISPLAY_CONNECT_REQUEST,     /* No followup message needed */
+  DISPLAY_CONNECT_RESPONSE,    /* Follows display_connect_response_t */
+  ASTRONAUT_CONNECT_REQUEST,   /* No followup message needed */
+  ASTROUNAUT_CONNECT_RESPONSE, /* Follows astronaut_connect_response_t */
+  ACTION_REQUEST,              /* Follows action_request_t */
+  ACTION_RESPONSE,             /* Follows status_code_and_score_response_t */
+  DISCONNECT_REQUEST,          /* Follows disconnect_request_t */
+  DISCONNECT_RESPONSE,         /* Follows status_code_and_score_response_t */
+  /* PUBSUB only messages */
+  GAME_ENDED,    /* No followup message needed */
+  ALIENS_UPDATE, /* Follows aliens_update_t */
+  SCORES_UPDATE  /* Follows ScoresMessage (defined in src/proto/scores.proto) */
 } MESSAGE_TYPE;
 
 typedef enum {
