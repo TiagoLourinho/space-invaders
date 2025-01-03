@@ -39,7 +39,7 @@
       server simple publishes all messages received from the clients,
       invalidating the tokens so that sensitive information isn't broadcasted
 
-    - To generate the aliens updates the server creates a fork and the new
+    - To generate the aliens updates the server creates a thread and the new
       process uses the ALIENS_UPDATE_REQUEST to notify the main server -> Uses
       only REQREP.
 
