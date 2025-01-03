@@ -21,28 +21,21 @@
 #define SERVER_ZMQ_PUBSUB_BIND_ADDRESS PROTOCOL "://*:" PORT_PUBSUB
 
 /*
-  Every message (request or response) has 2 parts:
+  Every message has 2 or 3 parts (depending if it is REQREP or PUBSUB) and they
+  are sent in the following order:
+    - (Optional) the topic (defined by PUBSUB_TOPICS)
     - the type/header (defined by MESSAGE_TYPE)
-    - the message contents (defined by the requests/responses structs)
+    - the message contents (defined by the respective structs)
 
-  The "connection" between message types and requests/responses structs used can
-  be seen in the function `get_msg_size` in the `zeromq_wrappers.c`
+  Communication examples:
+    - Client sends a request to the server with the 2 parts mentioned above and
+      the server responds in the same way -> Uses only REQREP.
 
-  Interactions with the server:
-    - Client sends a request to the server with the 2 parts mentioned above
-      (except the connect, as it only contains the header) and the server
-      responds in the same way -> Uses only REQREP.
-
-    - Display servers sends an initial connect message with no followup part to
-      get the current game status (using REQREP) and after that starts listening
+    - Display servers send an initial connect message with no followup part to
+      get the current game status (using REQREP) and after that start listening
       to all the messages broadcasted by the server using PUBSUB. Here, the
       server simple publishes all messages received from the clients,
       invalidating the tokens so that sensitive information isn't broadcasted
-
-    - To generate the aliens updates the server creates a thread and the new
-      process uses the ALIENS_UPDATE_REQUEST to notify the main server -> Uses
-      only REQREP.
-
 */
 typedef enum {
   /*
