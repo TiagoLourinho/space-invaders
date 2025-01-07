@@ -56,7 +56,8 @@ void nc_add_alien(WINDOW *game_window, position_t *position, bool regenerated);
 void nc_clean_position(WINDOW *win, position_t position);
 
 /* Cleans a zap from the screen */
-void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap);
+void nc_clean_zap(WINDOW *win, game_t *game, MOVEMENT_ORIENTATION orientation,
+                  int index);
 
 /* Stops and cleanup ncurses */
 void nc_cleanup();

@@ -54,10 +54,6 @@ int validate_action_request(action_request_t request, game_t game,
     if (!(current_ts - player.last_stunned > STUNNED_DELAY))
       return 400;
 
-    /* Player shot and cant move while zapping */
-    if (!(current_ts - player.last_shot > ZAP_TIME_ON_SCREEN))
-      return 400;
-
     /* Check if movement direction aligns with orientation */
     if (player.orientation == HORIZONTAL) {
       if (!(request.movement_direction == LEFT ||

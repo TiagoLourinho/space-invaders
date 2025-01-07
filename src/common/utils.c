@@ -26,7 +26,7 @@ void handle_player_connect(
 /* Handles the state and screen updates when a player makes an action */
 void handle_player_action(action_request_t *action_request,
                           player_t *current_player, WINDOW *game_window,
-                          game_t *game) {
+                          game_t *game, pthread_mutex_t *lock) {
   position_t old_position;
 
   if (action_request->action_type == MOVE) {
@@ -41,8 +41,11 @@ void handle_player_action(action_request_t *action_request,
   } else if (action_request->action_type == ZAP) {
     player_zap(game_window, game, action_request->id);
     nc_draw_zap(game_window, game, current_player);
-    usleep(ZAP_TIME_ON_SCREEN * 1000);
-    nc_clean_zap(game_window, game, current_player);
+    spawn_clean_zap_thread(current_player->orientation,
+                           current_player->orientation == HORIZONTAL
+                               ? current_player->position.col
+                               : current_player->position.row,
+                           game, game_window, lock);
   }
 }
 
@@ -298,6 +301,48 @@ void player_zap(WINDOW *win, game_t *game, int player_id) {
          player->position.row == other_player->position.row))
       other_player->last_stunned = current_ts;
   }
+}
+
+/* Threaded function responsible for cleaning the zap after sleeping */
+void *clean_zap_thread(void *void_args) {
+  zap_clean_thread_args_t *args = (zap_clean_thread_args_t *)void_args;
+
+  usleep(ZAP_TIME_ON_SCREEN * 1000);
+
+  pthread_mutex_lock(args->lock);
+  nc_clean_zap(args->game_window, args->game, args->orientation, args->index);
+  pthread_mutex_unlock(args->lock);
+
+  free(void_args);
+
+  return NULL;
+}
+
+/* Spawns the thread to clean the zap */
+void spawn_clean_zap_thread(MOVEMENT_ORIENTATION orientation, int index,
+                            game_t *game, WINDOW *game_window,
+                            pthread_mutex_t *lock) {
+  zap_clean_thread_args_t *args;
+  pthread_t thread_id;
+
+  /* Assert that the lock was correctly created */
+  assert(lock != NULL);
+
+  /* Use malloc instead of a local variable to ensure that it stays in memory
+   * and the thread can access it */
+  args = (zap_clean_thread_args_t *)malloc(sizeof(zap_clean_thread_args_t));
+  assert(args != NULL);
+
+  args->game = game;
+  args->game_window = game_window;
+  args->index = index;
+  args->lock = lock;
+  args->orientation = orientation;
+
+  /* Spawn the thread but don't join it, as it only sleeps,
+    cleans and then exit
+  */
+  assert(pthread_create(&thread_id, NULL, clean_zap_thread, args) == 0);
 }
 
 /******************** Miscellaneous ********************/

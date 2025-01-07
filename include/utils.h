@@ -4,6 +4,7 @@
 #include "game_def.h"
 #include "ncurses_wrapper.h"
 #include "zeromq_wrapper.h"
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@ void handle_player_connect(
 /* Handles the state and screen updates when a player makes an action */
 void handle_player_action(action_request_t *action_request,
                           player_t *current_player, WINDOW *game_window,
-                          game_t *game);
+                          game_t *game, pthread_mutex_t *lock);
 
 /* Handles the state and screen updates when a player disconnects */
 void handle_player_disconnect(WINDOW *game_window, player_t *current_player);
@@ -48,6 +49,14 @@ int find_position_and_init_player(game_t *game, int *tokens);
 
 /* Updates state when a player zaps and kills the aliens */
 void player_zap(WINDOW *win, game_t *game, int player_id);
+
+/* Threaded function responsible for cleaning the zap after sleeping */
+void *clean_zap_thread(void *void_args);
+
+/* Spawns the thread to clean the zap */
+void spawn_clean_zap_thread(MOVEMENT_ORIENTATION orientation, int index,
+                            game_t *game, WINDOW *game_window,
+                            pthread_mutex_t *lock);
 
 /******************** Miscellaneous ********************/
 

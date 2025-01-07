@@ -133,4 +133,13 @@ typedef struct {
   pthread_mutex_t *lock;
 } aliens_update_thread_args_t;
 
+typedef struct {
+  MOVEMENT_ORIENTATION
+  orientation; /* The orientation of the player that shot */
+  int index;   /* The col/row of the player that shot */
+  game_t *game;
+  WINDOW *game_window;
+  pthread_mutex_t *lock;
+} zap_clean_thread_args_t;
+
 #endif // COMMS_H

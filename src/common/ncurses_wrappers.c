@@ -251,15 +251,16 @@ void nc_clean_position(WINDOW *win, position_t position) {
 }
 
 /* Cleans a zap from the screen */
-void nc_clean_zap(WINDOW *win, game_t *game, player_t *player_zap) {
+void nc_clean_zap(WINDOW *win, game_t *game, MOVEMENT_ORIENTATION orientation,
+                  int index) {
   player_t *other_player;
 
   /* Clean entire row/col */
   for (int i = 0; i < SPACE_SIZE; i++) {
-    if (player_zap->orientation == VERTICAL)
-      wmove(win, POS_TO_WIN(player_zap->position.row), POS_TO_WIN(i));
+    if (orientation == VERTICAL)
+      wmove(win, POS_TO_WIN(index), POS_TO_WIN(i));
     else
-      wmove(win, POS_TO_WIN(i), POS_TO_WIN(player_zap->position.col));
+      wmove(win, POS_TO_WIN(i), POS_TO_WIN(index));
 
     waddch(win, ' ');
   }

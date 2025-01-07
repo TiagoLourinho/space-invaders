@@ -37,7 +37,7 @@ int main() {
   /* Aliens update thread */
   pthread_t thread_id;
   aliens_update_thread_args_t thread_args;
-  pthread_mutex_t lock;
+  pthread_mutex_t lock; /* Also used for the thread that cleans the zaps */
 
   /* ZeroMQ initialization */
   zmq_bind_socket(rep_socket, SERVER_ZMQ_REQREP_BIND_ADDRESS);
@@ -113,7 +113,7 @@ int main() {
                      GAME_UPDATES_TOPIC);
 
         handle_player_action(action_request, &game.players[action_request->id],
-                             game_window, &game);
+                             game_window, &game, &lock);
 
         status_code_and_score_response.player_score =
             game.players[action_request->id].score;

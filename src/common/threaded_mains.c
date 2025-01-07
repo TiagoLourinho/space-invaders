@@ -224,7 +224,7 @@ void *outer_space_display_main(void *void_args) {
     case ACTION_REQUEST:
       action_request = (action_request_t *)temp_pointer;
       handle_player_action(action_request, &game->players[action_request->id],
-                           game_window, game);
+                           game_window, game, args->ncurses_lock);
       break;
 
     case DISCONNECT_REQUEST:
