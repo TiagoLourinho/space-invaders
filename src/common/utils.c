@@ -310,7 +310,9 @@ void *clean_zap_thread(void *void_args) {
   usleep(ZAP_TIME_ON_SCREEN * 1000);
 
   pthread_mutex_lock(args->lock);
-  nc_clean_zap(args->game_window, args->game, args->orientation, args->index);
+  /* Only clean if the game hasn't ended*/
+  if (args->game->aliens_alive != 0)
+    nc_clean_zap(args->game_window, args->game, args->orientation, args->index);
   pthread_mutex_unlock(args->lock);
 
   free(void_args);
