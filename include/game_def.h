@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Gamge configuration */
+/* Game configuration */
 #define SPACE_SIZE 20
 #define MAX_PLAYERS 8
 #define N_ALIENS (SPACE_SIZE * SPACE_SIZE) / 3
