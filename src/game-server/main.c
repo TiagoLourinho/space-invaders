@@ -23,6 +23,7 @@ int main() {
   astronaut_connect_response_t astronaut_connect_response;
   display_connect_response_t display_connect_response;
   action_request_t *action_request;
+  action_response_t action_response;
   disconnect_request_t *disconnect_request;
   status_code_and_score_response_t status_code_and_score_response;
   /* Ncurses related */
@@ -103,10 +104,10 @@ int main() {
     case ACTION_REQUEST: /* Received by the astronaut clients */
       action_request = (action_request_t *)temp_pointer;
 
-      status_code_and_score_response.status_code =
-          validate_action_request(*action_request, game, tokens);
+      action_response.status_code = validate_action_request(
+          *action_request, game, tokens, &action_response);
 
-      if (status_code_and_score_response.status_code == 200) {
+      if (action_response.status_code == 200) {
         /* Publish update */
         action_request->token = -1; /* Invalidate token */
         zmq_send_msg(pub_socket, ACTION_REQUEST, action_request, -1,
@@ -115,12 +116,10 @@ int main() {
         handle_player_action(action_request, &game.players[action_request->id],
                              game_window, &game, &lock);
 
-        status_code_and_score_response.player_score =
-            game.players[action_request->id].score;
+        action_response.player_score = game.players[action_request->id].score;
       }
 
-      zmq_send_msg(rep_socket, ACTION_RESPONSE, &status_code_and_score_response,
-                   -1, NO_TOPIC);
+      zmq_send_msg(rep_socket, ACTION_RESPONSE, &action_response, -1, NO_TOPIC);
       break;
 
     case DISCONNECT_REQUEST: /* Received by the astronaut clients */

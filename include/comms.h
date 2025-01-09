@@ -48,7 +48,7 @@ typedef enum {
   ASTRONAUT_CONNECT_REQUEST,   /* No followup message needed */
   ASTROUNAUT_CONNECT_RESPONSE, /* Follows astronaut_connect_response_t */
   ACTION_REQUEST,              /* Follows action_request_t */
-  ACTION_RESPONSE,             /* Follows status_code_and_score_response_t */
+  ACTION_RESPONSE,             /* Follows action_response_t */
   DISCONNECT_REQUEST,          /* Follows disconnect_request_t */
   DISCONNECT_RESPONSE,         /* Follows status_code_and_score_response_t */
   /* PUBSUB only messages */
@@ -105,6 +105,18 @@ typedef struct {
   /* The token assigned to the player for authentication */
   int token;
 } astronaut_connect_response_t;
+
+typedef struct {
+  /* 200 if Ok, 400 otherwise */
+  int status_code;
+  int player_score;
+  /* The timestamp of the next allowed zap (accounting for zap delay) -> this is
+   * also enforced server-side*/
+  uint64_t next_allowed_zap_timestamp;
+  /* The timestamp of the next allowed action (accounting for stunned delay)->
+   * this is also enforced server-side */
+  uint64_t next_allowed_action_timestamp;
+} action_response_t;
 
 typedef struct {
   /* 200 if Ok, 400 otherwise */

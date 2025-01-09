@@ -17,6 +17,7 @@ void *astronaut_client_main(void *void_args) {
   /* Structs to receive and send the requests */
   astronaut_connect_response_t *connect_response;
   action_request_t action_request;
+  action_response_t *action_response;
   status_code_and_score_response_t *status_code_and_score_response;
   disconnect_request_t disconnect_request;
   /* Game management related */
@@ -27,6 +28,10 @@ void *astronaut_client_main(void *void_args) {
   int player_token;
   int player_score = 0;
   MOVEMENT_ORIENTATION player_orientation;
+  /* Zap/stunned timeout related */
+  uint64_t current_ts = get_timestamp_ms();
+  uint64_t next_allowed_zap_timestamp = current_ts;
+  uint64_t next_allowed_action_timestamp = current_ts;
 
   /* ZeroMQ initialization */
   zmq_connect_socket(req_socket, SERVER_ZMQ_REQREP_ADDRESS);
@@ -65,9 +70,14 @@ void *astronaut_client_main(void *void_args) {
   /* Game loop */
   while (!(stop_playing || (args->threaded && *args->terminate_threads))) {
     key_pressed = wgetch(window);
+    current_ts = get_timestamp_ms();
 
     switch (key_pressed) {
     case 65: // KEY_UP
+
+      /* Player is stunned */
+      if (current_ts < next_allowed_action_timestamp)
+        break;
 
       if (player_orientation == HORIZONTAL) /* Player can't move vertically */
         break;
@@ -78,6 +88,10 @@ void *astronaut_client_main(void *void_args) {
 
     case 66: // KEY_DOWN
 
+      /* Player is stunned */
+      if (current_ts < next_allowed_action_timestamp)
+        break;
+
       if (player_orientation == HORIZONTAL) /* Player can't move vertically */
         break;
       send_action_message = true;
@@ -86,6 +100,10 @@ void *astronaut_client_main(void *void_args) {
       break;
 
     case 68: // KEY_LEFT
+
+      /* Player is stunned */
+      if (current_ts < next_allowed_action_timestamp)
+        break;
 
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
@@ -96,6 +114,10 @@ void *astronaut_client_main(void *void_args) {
 
     case 67: // KEY_RIGHT
 
+      /* Player is stunned */
+      if (current_ts < next_allowed_action_timestamp)
+        break;
+
       if (player_orientation == VERTICAL) /* Player can't move horizontally */
         break;
       send_action_message = true;
@@ -104,6 +126,12 @@ void *astronaut_client_main(void *void_args) {
       break;
 
     case 32: // Spacebar
+
+      /* Player is stunned or just zapped */
+      if (current_ts < next_allowed_action_timestamp ||
+          current_ts < next_allowed_zap_timestamp)
+        break;
+
       send_action_message = true;
       action_request.action_type = ZAP;
       action_request.movement_direction = NO_MOVEMENT;
@@ -137,11 +165,15 @@ void *astronaut_client_main(void *void_args) {
     if (send_action_message) {
       zmq_send_msg(req_socket, ACTION_REQUEST, &action_request, -1, NO_TOPIC);
 
-      status_code_and_score_response =
-          (status_code_and_score_response_t *)zmq_receive_msg(
-              req_socket, &msg_type, NO_TOPIC);
-      player_score = status_code_and_score_response->player_score;
-      free(status_code_and_score_response);
+      action_response =
+          (action_response_t *)zmq_receive_msg(req_socket, &msg_type, NO_TOPIC);
+
+      player_score = action_response->player_score;
+      next_allowed_action_timestamp =
+          action_response->next_allowed_action_timestamp;
+      next_allowed_zap_timestamp = action_response->next_allowed_zap_timestamp;
+
+      free(action_response);
 
       send_action_message = false;
     }

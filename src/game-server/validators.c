@@ -15,13 +15,17 @@ int validate_connect_request(game_t game) {
 }
 
 /* Validates the action request and returns the status code */
-int validate_action_request(action_request_t request, game_t game,
-                            int *tokens) {
+int validate_action_request(action_request_t request, game_t game, int *tokens,
+                            action_response_t *action_response) {
 
   int id = request.id;
   int request_token = request.token;
   player_t player;
   uint64_t current_ts = get_timestamp_ms();
+
+  /* Initially, there is no delay */
+  action_response->next_allowed_action_timestamp = current_ts;
+  action_response->next_allowed_zap_timestamp = current_ts;
 
   /* ID not valid */
   if (!(id >= 0 && id < MAX_PLAYERS))
@@ -40,19 +44,28 @@ int validate_action_request(action_request_t request, game_t game,
   switch (request.action_type) {
   case ZAP:
     /* Player is stunned */
-    if (!(current_ts - player.last_stunned > STUNNED_DELAY))
+    if (!(current_ts - player.last_stunned > STUNNED_DELAY)) {
+      action_response->next_allowed_action_timestamp =
+          player.last_stunned + STUNNED_DELAY;
       return 400;
+    }
 
     /* Player shot */
-    if (!(current_ts - player.last_shot > ZAP_DELAY))
+    if (!(current_ts - player.last_shot > ZAP_DELAY)) {
+      action_response->next_allowed_zap_timestamp =
+          player.last_shot + ZAP_DELAY;
       return 400;
+    }
 
     break;
   case MOVE:
 
     /* Player is stunned */
-    if (!(current_ts - player.last_stunned > STUNNED_DELAY))
+    if (!(current_ts - player.last_stunned > STUNNED_DELAY)) {
+      action_response->next_allowed_action_timestamp =
+          player.last_stunned + STUNNED_DELAY;
       return 400;
+    }
 
     /* Check if movement direction aligns with orientation */
     if (player.orientation == HORIZONTAL) {
