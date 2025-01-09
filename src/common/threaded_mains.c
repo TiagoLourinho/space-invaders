@@ -3,6 +3,7 @@
 
 #include "threaded_mains.h"
 
+/* Thread ready implementation of the astronaut client main */
 void *astronaut_client_main(void *void_args) {
 
   /* Threaded args */
@@ -198,6 +199,7 @@ void *astronaut_client_main(void *void_args) {
   return NULL;
 }
 
+/* Thread ready implementation of the outer-space-display main */
 void *outer_space_display_main(void *void_args) {
   /* Threaded args */
   threaded_mains_args_t *args = (threaded_mains_args_t *)void_args;
